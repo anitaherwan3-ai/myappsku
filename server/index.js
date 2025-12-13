@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { initDB } = require('./db');
 
 // Import Routes
@@ -15,22 +16,33 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-// Increase limit for Base64 image uploads
 app.use(express.json({ limit: '10mb' })); 
 
 // Initialize DB & Start Server
 initDB().then(() => {
   
-  // Routes
+  // API Routes
   app.use('/api/auth', authRoutes);
   app.use('/api/activities', activityRoutes);
   app.use('/api/patients', patientRoutes);
   app.use('/api/officers', officerRoutes);
-  app.use('/api/content', contentRoutes); // News & Carousel
+  app.use('/api/content', contentRoutes);
   app.use('/api/icd10', icd10Routes);
 
-  app.get('/', (req, res) => {
-    res.send('PCC Sumsel Backend API is Running');
+  // SERVE FRONTEND (Production Mode)
+  // Assumes the frontend build is in a folder named 'dist' or 'build' one level up
+  // or inside the server folder. Adjust path as necessary for your deployment.
+  // For this example, we assume standard Vite build output to '../dist'
+  const distPath = path.join(__dirname, '../dist');
+  app.use(express.static(distPath));
+
+  // Catch-all route to serve index.html for Client-Side Routing
+  app.get('*', (req, res) => {
+    // If requesting API that doesn't exist, return 404
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API Endpoint Not Found' });
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
   });
 
   app.listen(PORT, () => {

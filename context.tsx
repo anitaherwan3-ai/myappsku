@@ -1,113 +1,54 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { AppState, Officer, Activity, News, Patient, ICD10, CarouselItem } from './types';
 
-// Mock Data
-const MOCK_OFFICERS: Officer[] = [
-  { id: '1', email: 'admin@pcc.sumsel.go.id', name: 'Administrator', teamId: 'ADM-001', password: 'admin', role: 'admin' },
-  { id: '2', email: 'dokter@pcc.sumsel.go.id', name: 'Dr. Budi Santoso', teamId: 'MED-001', password: '123', role: 'petugas' },
-];
+// API Configuration
+const API_URL = 'http://localhost:5000/api';
 
+// --- MOCK DATA FOR OFFLINE MODE ---
 const MOCK_ACTIVITIES: Activity[] = [
-  { id: '1', name: 'Pengobatan Masal Palembang', startDate: '2023-10-25', endDate: '2023-10-27', host: 'Dinkes Prov', location: 'Alun-alun', status: 'Done' },
-  { id: '2', name: 'MCU Pejabat Pemprov', startDate: '2023-11-10', endDate: '2023-11-12', host: 'Gubernur', location: 'Kantor Gubernur', status: 'On Progress' },
-  { id: '3', name: 'Posko Kesehatan Mudik', startDate: '2024-04-01', endDate: '2024-04-15', host: 'Polda Sumsel', location: 'Tol Palindra', status: 'To Do' },
+  { id: '1', name: 'Pemeriksaan Kesehatan Rutin', startDate: '2024-01-01', endDate: '2024-01-31', host: 'Dinkes Sumsel', location: 'Palembang', status: 'On Progress' },
+  { id: '2', name: 'Donor Darah Massal', startDate: '2023-12-15', endDate: '2023-12-15', host: 'PMI', location: 'Indralaya', status: 'Done' }
 ];
-
-const MOCK_ICD10: ICD10[] = [
-  { code: 'A00', name: 'Cholera' },
-  { code: 'A01', name: 'Typhoid and paratyphoid fevers' },
-  { code: 'I10', name: 'Essential (primary) hypertension' },
-  { code: 'E11', name: 'Type 2 diabetes mellitus' },
-  { code: 'J06', name: 'Acute upper respiratory infections' },
-  { code: 'K21', name: 'Gastro-esophageal reflux disease' },
-  { code: 'R51', name: 'Headache' },
-  { code: 'M54.5', name: 'Low back pain' },
+const MOCK_NEWS: News[] = [
+    { id: '1', title: 'Peluncuran Sistem PCC', date: '2024-01-01', content: 'Sistem manajemen baru telah diluncurkan untuk meningkatkan layanan kesehatan.', imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80' },
+    { id: '2', title: 'Kunjungan Gubernur', date: '2023-12-20', content: 'Gubernur meninjau fasilitas kesehatan di daerah terpencil.', imageUrl: 'https://images.unsplash.com/photo-1579684385136-137af7513572?auto=format&fit=crop&w=800&q=80' }
 ];
-
 const MOCK_CAROUSEL: CarouselItem[] = [
-  { id: '1', imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=2070', title: 'Pelayanan Kesehatan Prima', subtitle: 'PCC Sumsel hadir untuk masyarakat' },
-  { id: '2', imageUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2053', title: 'Fasilitas Modern', subtitle: 'Didukung teknologi terkini' },
+    { id: '1', title: 'Selamat Datang di PCC', subtitle: 'Province Command Center Sumatera Selatan', imageUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1920&q=80' }
+];
+const MOCK_OFFICERS: Officer[] = [
+    { id: '1', email: 'admin@pcc.sumsel.go.id', name: 'Administrator', teamId: 'ADM-001', password: 'admin', role: 'admin' },
+    { id: '2', email: 'petugas@pcc.sumsel.go.id', name: 'Budi Santoso', teamId: 'MED-001', password: 'user', role: 'petugas' }
 ];
 
-// Generate 20 Mock Patients for Dashboard Data
-const generateMockPatients = (): Patient[] => {
-  const basePatients: Patient[] = [
-    {
-      id: 'p1', mrn: 'RM-20231025-0001', activityId: '1', name: 'Ahmad Supri', age: 45, gender: 'L', address: 'Jl. Merdeka', phone: '08123', identityNo: '123', visitDate: '2023-10-25', category: 'Berobat',
-      height: 170, weight: 70, bloodPressure: '120/80', pulse: 80, respiration: 20, bmi: 24.2, bmiStatus: 'Normal', historyOfIllness: 'Dispepsia',
-      subjective: 'Sakit perut', diagnosisCode: 'K21', diagnosisName: 'Gastro-esophageal reflux disease', referralStatus: 'Tidak Rujuk'
-    },
-    {
-      id: 'p2', mrn: 'RM-20231026-0002', activityId: '1', name: 'Siti Aminah', age: 55, gender: 'P', address: 'Jl. Sudirman', phone: '08124', identityNo: '124', visitDate: '2023-10-26', category: 'Berobat',
-      height: 155, weight: 65, bloodPressure: '150/90', pulse: 88, respiration: 22, bmi: 27.0, bmiStatus: 'Overweight', historyOfIllness: 'Hipertensi',
-      subjective: 'Pusing tengkuk', diagnosisCode: 'I10', diagnosisName: 'Essential (primary) hypertension', referralStatus: 'Rujuk', therapy: 'Amlodipine 5mg'
-    },
-    {
-      id: 'p3', mrn: 'RM-20231026-0003', activityId: '1', name: 'Budi Santoso', age: 30, gender: 'L', address: 'Plaju', phone: '08125', identityNo: '125', visitDate: '2023-10-26', category: 'Berobat',
-      height: 175, weight: 80, bloodPressure: '130/80', pulse: 82, respiration: 18, bmi: 26.1, bmiStatus: 'Overweight', historyOfIllness: '-',
-      subjective: 'Demam', diagnosisCode: 'A01', diagnosisName: 'Typhoid and paratyphoid fevers', referralStatus: 'Tidak Rujuk'
-    },
-    {
-      id: 'p4', mrn: 'RM-20231110-0004', activityId: '2', name: 'Ir. Joko', age: 50, gender: 'L', address: 'Komp. Pemprov', phone: '08126', identityNo: '126', visitDate: '2023-11-10', category: 'MCU',
-      height: 168, weight: 75, bloodPressure: '120/80', pulse: 70, respiration: 18, bmi: 26.5, bmiStatus: 'Overweight', historyOfIllness: '-',
-      visusOD: '6/6', visusOS: '6/6', colorBlind: 'Normal', mcuConclusion: 'Sehat', mcuRecommendation: 'Olahraga rutin'
-    },
-  ];
-
-  for(let i=5; i<=20; i++) {
-     const isMcu = i % 4 === 0;
-     const date = i % 2 === 0 ? '20231025' : '20231111';
-     const dateStr = i % 2 === 0 ? '2023-10-25' : '2023-11-11';
-     basePatients.push({
-        id: `p${i}`, mrn: `RM-${date}-00${i.toString().padStart(2, '0')}`,
-        activityId: i % 2 === 0 ? '1' : '2',
-        name: `Pasien ${i}`,
-        age: 20 + Math.floor(Math.random() * 50),
-        gender: i % 2 === 0 ? 'L' : 'P',
-        address: 'Palembang', phone: '081xxx', identityNo: `ID-${i}`,
-        visitDate: dateStr,
-        category: isMcu ? 'MCU' : 'Berobat',
-        height: 160 + (i%20), weight: 60 + (i%20), bloodPressure: '120/80', pulse: 80, respiration: 20, bmi: 22, bmiStatus: 'Normal', historyOfIllness: '-',
-        subjective: isMcu ? undefined : 'Keluhan umum',
-        diagnosisCode: isMcu ? undefined : (i%3===0 ? 'I10' : (i%3===1 ? 'J06' : 'E11')),
-        diagnosisName: isMcu ? undefined : (i%3===0 ? 'Hypertension' : (i%3===1 ? 'ISPA' : 'Diabetes')),
-        referralStatus: isMcu ? undefined : (i%5===0 ? 'Rujuk' : 'Tidak Rujuk'),
-        mcuConclusion: isMcu ? 'Fit' : undefined
-     });
-  }
-
-  return basePatients;
+interface AuthResponse {
+  token: string;
+  user: Officer;
 }
 
-const MOCK_NEWS: News[] = [
-  { id: '1', title: 'Peresmian PCC Sumsel', date: '2023-09-01', content: 'Gubernur meresmikan Province Command Center sebagai pusat data kesehatan terpadu. Acara ini dihadiri oleh berbagai pejabat daerah dan pusat. PCC diharapkan menjadi tolak ukur baru dalam manajemen kesehatan digital di Sumatera Selatan.', imageUrl: 'https://images.unsplash.com/photo-1577962917302-cd874c4e3169?auto=format&fit=crop&q=80&w=1000' },
-  { id: '2', title: 'Layanan Telemedicine Gratis', date: '2023-10-05', content: 'Masyarakat kini bisa mengakses dokter spesialis melalui aplikasi PCC tanpa dipungut biaya. Program ini bertujuan untuk memeratakan akses kesehatan hingga ke pelosok desa.', imageUrl: 'https://images.unsplash.com/photo-1576091160550-2187d8002faa?auto=format&fit=crop&q=80&w=1000' },
-  { id: '3', title: 'Kunjungan Menkes', date: '2023-11-20', content: 'Menteri Kesehatan memuji fasilitas PCC Sumsel yang modern dan terintegrasi.', imageUrl: 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&q=80&w=1000' },
-];
-
 interface AppContextType extends AppState {
-  login: (email: string, pass: string) => boolean;
+  login: (email: string, pass: string) => Promise<boolean>;
   logout: () => void;
   // CRUD Actions
-  addActivity: (a: Activity) => void;
-  updateActivity: (a: Activity) => void;
-  deleteActivity: (id: string) => void;
-  addPatient: (p: Patient) => void;
-  updatePatient: (p: Patient) => void;
-  deletePatient: (id: string) => void;
-  addOfficer: (o: Officer) => void;
-  updateOfficer: (o: Officer) => void;
-  deleteOfficer: (id: string) => void;
-  addNews: (n: News) => void;
-  updateNews: (n: News) => void;
-  deleteNews: (id: string) => void;
+  addActivity: (a: Activity) => Promise<void>;
+  updateActivity: (a: Activity) => Promise<void>;
+  deleteActivity: (id: string) => Promise<void>;
+  addPatient: (p: Patient) => Promise<void>;
+  updatePatient: (p: Patient) => Promise<void>;
+  deletePatient: (id: string) => Promise<void>;
+  addOfficer: (o: Officer) => Promise<void>;
+  updateOfficer: (o: Officer) => Promise<void>;
+  deleteOfficer: (id: string) => Promise<void>;
+  addNews: (n: News) => Promise<void>;
+  updateNews: (n: News) => Promise<void>;
+  deleteNews: (id: string) => Promise<void>;
   
   // New Actions
-  addICD10: (list: ICD10[]) => void;
-  updateICD10: (item: ICD10) => void;
-  deleteICD10: (code: string) => void;
-  addCarousel: (c: CarouselItem) => void;
-  deleteCarousel: (id: string) => void;
+  addICD10: (list: ICD10[]) => Promise<void>;
+  updateICD10: (item: ICD10) => Promise<void>;
+  deleteICD10: (code: string) => Promise<void>;
+  addCarousel: (c: CarouselItem) => Promise<void>;
+  deleteCarousel: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -117,89 +58,302 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const saved = localStorage.getItem('pcc_user');
     return saved ? JSON.parse(saved) : null;
   });
+  const [token, setToken] = useState<string | null>(localStorage.getItem('pcc_token'));
 
-  const [activities, setActivities] = useState<Activity[]>(() => {
-    const saved = localStorage.getItem('pcc_activities');
-    return saved ? JSON.parse(saved) : MOCK_ACTIVITIES;
+  // Helper to load Local Data
+  const loadLocal = <T,>(key: string, defaultVal: T): T => {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : defaultVal;
+  };
+  const saveLocal = (key: string, data: any) => localStorage.setItem(key, JSON.stringify(data));
+
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [officers, setOfficers] = useState<Officer[]>([]);
+  const [news, setNews] = useState<News[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [icd10List, setIcd10List] = useState<ICD10[]>([]);
+  const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
+  const [isOffline, setIsOffline] = useState(false);
+
+  // Helper for Headers
+  const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': token ? `Bearer ${token}` : ''
   });
 
-  const [officers, setOfficers] = useState<Officer[]>(() => {
-    const saved = localStorage.getItem('pcc_officers');
-    return saved ? JSON.parse(saved) : MOCK_OFFICERS;
-  });
+  // --- FETCH DATA ---
+  const fetchPublicData = useCallback(async () => {
+    try {
+      // Quick check if backend is reachable with a short timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1000); 
+      await fetch(`${API_URL}/activities`, { method: 'HEAD', signal: controller.signal });
+      clearTimeout(timeoutId);
 
-  const [news, setNews] = useState<News[]>(() => {
-    const saved = localStorage.getItem('pcc_news');
-    return saved ? JSON.parse(saved) : MOCK_NEWS;
-  });
-
-  const [patients, setPatients] = useState<Patient[]>(() => {
-    const saved = localStorage.getItem('pcc_patients');
-    return saved ? JSON.parse(saved) : generateMockPatients();
-  });
-
-  const [icd10List, setIcd10List] = useState<ICD10[]>(() => {
-     const saved = localStorage.getItem('pcc_icd10');
-     return saved ? JSON.parse(saved) : MOCK_ICD10;
-  });
-
-  const [carouselItems, setCarouselItems] = useState<CarouselItem[]>(() => {
-     const saved = localStorage.getItem('pcc_carousel');
-     return saved ? JSON.parse(saved) : MOCK_CAROUSEL;
-  });
-
-  // Persistence
-  useEffect(() => localStorage.setItem('pcc_activities', JSON.stringify(activities)), [activities]);
-  useEffect(() => localStorage.setItem('pcc_officers', JSON.stringify(officers)), [officers]);
-  useEffect(() => localStorage.setItem('pcc_news', JSON.stringify(news)), [news]);
-  useEffect(() => localStorage.setItem('pcc_patients', JSON.stringify(patients)), [patients]);
-  useEffect(() => localStorage.setItem('pcc_icd10', JSON.stringify(icd10List)), [icd10List]);
-  useEffect(() => localStorage.setItem('pcc_carousel', JSON.stringify(carouselItems)), [carouselItems]);
-
-  useEffect(() => {
-    if (user) localStorage.setItem('pcc_user', JSON.stringify(user));
-    else localStorage.removeItem('pcc_user');
-  }, [user]);
-
-  // Actions
-  const login = (email: string, pass: string) => {
-    const found = officers.find(o => o.email.toLowerCase() === email.toLowerCase() && o.password === pass);
-    if (found) {
-      setUser(found);
-      return true;
+      setIsOffline(false);
+      const [resAct, resNews, resCarousel] = await Promise.all([
+        fetch(`${API_URL}/activities`),
+        fetch(`${API_URL}/content/news`),
+        fetch(`${API_URL}/content/carousel`)
+      ]);
+      
+      setActivities(await resAct.json());
+      setNews(await resNews.json());
+      setCarouselItems(await resCarousel.json());
+    } catch (error) {
+      console.warn("Backend unavailable or timeout. Switching to Offline Mode.");
+      setIsOffline(true);
+      setActivities(loadLocal('pcc_activities', MOCK_ACTIVITIES));
+      setNews(loadLocal('pcc_news', MOCK_NEWS));
+      setCarouselItems(loadLocal('pcc_carousel', MOCK_CAROUSEL));
     }
-    return false;
+  }, []);
+
+  const fetchProtectedData = useCallback(async () => {
+    if (!token && !isOffline) return;
+    
+    if (isOffline) {
+        setPatients(loadLocal('pcc_patients', []));
+        setOfficers(loadLocal('pcc_officers', MOCK_OFFICERS));
+        setIcd10List(loadLocal('pcc_icd10', []));
+        return;
+    }
+
+    try {
+      const headers = getHeaders();
+      const [resPat, resOff, resIcd] = await Promise.all([
+        fetch(`${API_URL}/patients`, { headers }),
+        fetch(`${API_URL}/officers`, { headers }),
+        fetch(`${API_URL}/icd10`, { headers })
+      ]);
+      
+      if(resPat.ok) setPatients(await resPat.json());
+      if(resOff.ok) setOfficers(await resOff.json());
+      if(resIcd.ok) setIcd10List(await resIcd.json());
+    } catch (error) {
+      console.warn("Error fetching protected data, falling back local:", error);
+      setPatients(loadLocal('pcc_patients', []));
+      setOfficers(loadLocal('pcc_officers', MOCK_OFFICERS));
+      setIcd10List(loadLocal('pcc_icd10', []));
+    }
+  }, [token, isOffline]);
+
+  // Initial Load
+  useEffect(() => {
+    fetchPublicData();
+  }, [fetchPublicData]);
+
+  // Load protected data on login
+  useEffect(() => {
+    if (user) {
+      fetchProtectedData();
+    }
+  }, [user, fetchProtectedData]);
+
+  // --- ACTIONS ---
+
+  const login = async (email: string, pass: string) => {
+    if (isOffline) {
+        // Mock Login
+        const localOfficers = loadLocal('pcc_officers', MOCK_OFFICERS);
+        const validUser = localOfficers.find(o => o.email === email && o.password === pass);
+        if (validUser) {
+            setUser(validUser);
+            setToken('mock-token');
+            localStorage.setItem('pcc_user', JSON.stringify(validUser));
+            localStorage.setItem('pcc_token', 'mock-token');
+            return true;
+        }
+        return false;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass })
+      });
+      
+      if (res.ok) {
+        const data: AuthResponse = await res.json();
+        setUser(data.user);
+        setToken(data.token);
+        localStorage.setItem('pcc_user', JSON.stringify(data.user));
+        localStorage.setItem('pcc_token', data.token);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error("Login Error (Switching to offline check):", e);
+      // Fallback to local check if fetch fails during login
+      setIsOffline(true);
+      const localOfficers = loadLocal('pcc_officers', MOCK_OFFICERS);
+      const validUser = localOfficers.find(o => o.email === email && o.password === pass);
+        if (validUser) {
+            setUser(validUser);
+            setToken('mock-token');
+            localStorage.setItem('pcc_user', JSON.stringify(validUser));
+            localStorage.setItem('pcc_token', 'mock-token');
+            return true;
+        }
+      return false;
+    }
   };
 
-  const logout = () => setUser(null);
-
-  const addActivity = (item: Activity) => setActivities([...activities, item]);
-  const updateActivity = (item: Activity) => setActivities(activities.map(i => i.id === item.id ? item : i));
-  const deleteActivity = (id: string) => setActivities(activities.filter(i => i.id !== id));
-
-  const addPatient = (item: Patient) => setPatients([...patients, item]);
-  const updatePatient = (item: Patient) => setPatients(patients.map(i => i.id === item.id ? item : i));
-  const deletePatient = (id: string) => setPatients(patients.filter(i => i.id !== id));
-
-  const addOfficer = (item: Officer) => setOfficers([...officers, item]);
-  const updateOfficer = (item: Officer) => setOfficers(officers.map(i => i.id === item.id ? item : i));
-  const deleteOfficer = (id: string) => setOfficers(officers.filter(i => i.id !== id));
-
-  const addNews = (item: News) => setNews([...news, item]);
-  const updateNews = (item: News) => setNews(news.map(i => i.id === item.id ? item : i));
-  const deleteNews = (id: string) => setNews(news.filter(i => i.id !== id));
-
-  const addICD10 = (list: ICD10[]) => {
-      // Merge unique
-      const existingCodes = new Set(icd10List.map(i => i.code));
-      const newList = list.filter(i => !existingCodes.has(i.code));
-      setIcd10List([...icd10List, ...newList]);
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('pcc_user');
+    localStorage.removeItem('pcc_token');
+    // Clear sensitive data from state
+    setPatients([]);
+    setOfficers([]);
   };
-  const updateICD10 = (item: ICD10) => setIcd10List(icd10List.map(i => i.code === item.code ? item : i));
-  const deleteICD10 = (code: string) => setIcd10List(icd10List.filter(i => i.code !== code));
 
-  const addCarousel = (c: CarouselItem) => setCarouselItems([...carouselItems, c]);
-  const deleteCarousel = (id: string) => setCarouselItems(carouselItems.filter(i => i.id !== id));
+  // Generic Helpers for CRUD with Offline Fallback
+  const performAction = async (
+    endpoint: string, 
+    method: 'POST' | 'PUT' | 'DELETE', 
+    body: any, 
+    localKey: string, 
+    localUpdater: (current: any[]) => any[]
+  ) => {
+    if (!isOffline) {
+        try {
+            const url = method === 'POST' ? `${API_URL}/${endpoint}` : `${API_URL}/${endpoint}/${body?.id || body?.code || body}`;
+            const res = await fetch(url, { 
+                method, 
+                headers: getHeaders(), 
+                body: method !== 'DELETE' ? JSON.stringify(body) : undefined 
+            });
+            if (!res.ok) throw new Error("API Action Failed");
+            // If success, we can refetch or just let the local updater run below if we want optimistic, 
+            // but usually we rely on refetching. 
+            // However, to keep it simple, let's just refetch in the wrapper functions.
+            return;
+        } catch(e) {
+            console.warn("API Action Failed, falling back to local:", e);
+            setIsOffline(true);
+        }
+    }
+    
+    // Local Update
+    const current = loadLocal(localKey, []);
+    const updated = localUpdater(current);
+    saveLocal(localKey, updated);
+  };
+
+  // --- WRAPPERS ---
+  
+  // Activities
+  const addActivity = async (item: Activity) => {
+      await performAction('activities', 'POST', item, 'pcc_activities', (curr) => [...curr, item]);
+      if(isOffline) setActivities(prev => [...prev, item]); else fetchPublicData();
+  };
+  const updateActivity = async (item: Activity) => {
+      await performAction('activities', 'PUT', item, 'pcc_activities', (curr) => curr.map((x:Activity) => x.id === item.id ? item : x));
+      if(isOffline) setActivities(prev => prev.map(x => x.id === item.id ? item : x)); else fetchPublicData();
+  };
+  const deleteActivity = async (id: string) => {
+      await performAction('activities', 'DELETE', id, 'pcc_activities', (curr) => curr.filter((x:Activity) => x.id !== id));
+      if(isOffline) setActivities(prev => prev.filter(x => x.id !== id)); else fetchPublicData();
+  };
+
+  // Patients
+  const addPatient = async (item: Patient) => {
+      await performAction('patients', 'POST', item, 'pcc_patients', (curr) => [...curr, item]);
+      if(isOffline) setPatients(prev => [...prev, item]); else fetchProtectedData();
+  };
+  const updatePatient = async (item: Patient) => {
+      await performAction('patients', 'PUT', item, 'pcc_patients', (curr) => curr.map((x:Patient) => x.id === item.id ? item : x));
+      if(isOffline) setPatients(prev => prev.map(x => x.id === item.id ? item : x)); else fetchProtectedData();
+  };
+  const deletePatient = async (id: string) => {
+      await performAction('patients', 'DELETE', id, 'pcc_patients', (curr) => curr.filter((x:Patient) => x.id !== id));
+      if(isOffline) setPatients(prev => prev.filter(x => x.id !== id)); else fetchProtectedData();
+  };
+
+  // Officers
+  const addOfficer = async (item: Officer) => {
+      await performAction('officers', 'POST', item, 'pcc_officers', (curr) => [...curr, item]);
+      if(isOffline) setOfficers(prev => [...prev, item]); else fetchProtectedData();
+  };
+  const updateOfficer = async (item: Officer) => {
+      await performAction('officers', 'PUT', item, 'pcc_officers', (curr) => curr.map((x:Officer) => x.id === item.id ? item : x));
+      if(isOffline) setOfficers(prev => prev.map(x => x.id === item.id ? item : x)); else fetchProtectedData();
+  };
+  const deleteOfficer = async (id: string) => {
+      await performAction('officers', 'DELETE', id, 'pcc_officers', (curr) => curr.filter((x:Officer) => x.id !== id));
+      if(isOffline) setOfficers(prev => prev.filter(x => x.id !== id)); else fetchProtectedData();
+  };
+
+  // News
+  const addNews = async (item: News) => {
+      await performAction('content/news', 'POST', item, 'pcc_news', (curr) => [item, ...curr]);
+      if(isOffline) setNews(prev => [item, ...prev]); else fetchPublicData();
+  };
+  const updateNews = async (item: News) => {
+      await performAction('content/news', 'PUT', item, 'pcc_news', (curr) => curr.map((x:News) => x.id === item.id ? item : x));
+      if(isOffline) setNews(prev => prev.map(x => x.id === item.id ? item : x)); else fetchPublicData();
+  };
+  const deleteNews = async (id: string) => {
+      await performAction('content/news', 'DELETE', id, 'pcc_news', (curr) => curr.filter((x:News) => x.id !== id));
+      if(isOffline) setNews(prev => prev.filter(x => x.id !== id)); else fetchPublicData();
+  };
+
+  // Carousel
+  const addCarousel = async (item: CarouselItem) => {
+      await performAction('content/carousel', 'POST', item, 'pcc_carousel', (curr) => [...curr, item]);
+      if(isOffline) setCarouselItems(prev => [...prev, item]); else fetchPublicData();
+  };
+  const deleteCarousel = async (id: string) => {
+      await performAction('content/carousel', 'DELETE', id, 'pcc_carousel', (curr) => curr.filter((x:CarouselItem) => x.id !== id));
+      if(isOffline) setCarouselItems(prev => prev.filter(x => x.id !== id)); else fetchPublicData();
+  };
+
+  // ICD10
+  const addICD10 = async (list: ICD10[]) => {
+      // API supports bulk, local we push spread
+      if(!isOffline) {
+          try {
+             await fetch(`${API_URL}/icd10`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(list) });
+             fetchProtectedData();
+             return;
+          } catch(e) { setIsOffline(true); }
+      }
+      const current = loadLocal('pcc_icd10', []);
+      // dedupe basic check
+      const newItems = list.filter(n => !current.find((e:ICD10) => e.code === n.code));
+      const updated = [...current, ...newItems];
+      saveLocal('pcc_icd10', updated);
+      setIcd10List(updated);
+  };
+  const updateICD10 = async (item: ICD10) => {
+      if(!isOffline) {
+          try {
+             await fetch(`${API_URL}/icd10/${item.code}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(item) });
+             fetchProtectedData();
+             return;
+          } catch(e) { setIsOffline(true); }
+      }
+      const current = loadLocal('pcc_icd10', []);
+      const updated = current.map((x:ICD10) => x.code === item.code ? item : x);
+      saveLocal('pcc_icd10', updated);
+      setIcd10List(updated);
+  };
+  const deleteICD10 = async (code: string) => {
+      if(!isOffline) {
+          try {
+             await fetch(`${API_URL}/icd10/${code}`, { method: 'DELETE', headers: getHeaders() });
+             fetchProtectedData();
+             return;
+          } catch(e) { setIsOffline(true); }
+      }
+      const current = loadLocal('pcc_icd10', []);
+      const updated = current.filter((x:ICD10) => x.code !== code);
+      saveLocal('pcc_icd10', updated);
+      setIcd10List(updated);
+  };
 
   return (
     <AppContext.Provider value={{
