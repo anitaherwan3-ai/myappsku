@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context';
 import { Activity, Officer, News, Patient, ICD10, CarouselItem } from '../types';
-import { Edit, Trash2, Plus, Printer, Eye, Upload, Image as ImageIcon, Save, X, FileText, Calendar, User, ChevronDown, ChevronRight, ChevronUp, Folder, FolderOpen, Stethoscope, ClipboardList, Activity as ActivityIcon, Search, Filter, Info, Power, RotateCcw, Download, ChevronLeft } from 'lucide-react';
+import { Edit, Trash2, Plus, Printer, Eye, Upload, Image as ImageIcon, Save, X, FileText, Calendar, User, ChevronDown, ChevronRight, ChevronUp, Folder, FolderOpen, Stethoscope, ClipboardList, Activity as ActivityIcon, Search, Filter, Info, Power, RotateCcw, Download, ChevronLeft, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import PatientForm from './PatientForm';
 
@@ -512,7 +512,8 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
     const [editingPatient, setEditingPatient] = useState<Patient | undefined>(undefined);
     const [viewingPatient, setViewingPatient] = useState<Patient | null>(null);
     const [filterName, setFilterName] = useState('');
-    const [filterActivityId, setFilterActivityId] = useState('');
+    // Changed filterActivityId to filterActivityName for text search
+    const [filterActivityName, setFilterActivityName] = useState('');
     
     // Side Filter State
     const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
@@ -890,7 +891,12 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
     if (mode === 'edit') {
         const flatFiltered = patients.filter(p => {
              const matchesName = p.name.toLowerCase().includes(filterName.toLowerCase()) || p.mrn.toLowerCase().includes(filterName.toLowerCase());
-             const matchesActivity = filterActivityId ? p.activityId === filterActivityId : true;
+             
+             // Updated Activity Filtering Logic (Name based search instead of Dropdown ID)
+             const activity = activities.find(a => a.id === p.activityId);
+             const activityName = activity ? activity.name.toLowerCase() : '';
+             const matchesActivity = filterActivityName ? activityName.includes(filterActivityName.toLowerCase()) : true;
+
              return matchesName && matchesActivity;
         });
 
@@ -900,7 +906,41 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
         const currentItems = flatFiltered.slice(indexOfFirstItem, indexOfLastItem);
         const totalPages = Math.ceil(flatFiltered.length / itemsPerPage);
 
-        const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+        const paginate = (pageNumber: number) => {
+            if (pageNumber >= 1 && pageNumber <= totalPages) {
+                setCurrentPage(pageNumber);
+            }
+        };
+
+        // Optimized Pagination Numbers Logic
+        const getPageNumbers = () => {
+            const pageNumbers = [];
+            const maxPagesToShow = 5;
+            
+            if (totalPages <= maxPagesToShow) {
+                for (let i = 1; i <= totalPages; i++) {
+                    pageNumbers.push(i);
+                }
+            } else {
+                let startPage = currentPage - 2;
+                let endPage = currentPage + 2;
+
+                if (startPage < 1) {
+                    startPage = 1;
+                    endPage = maxPagesToShow;
+                }
+
+                if (endPage > totalPages) {
+                    endPage = totalPages;
+                    startPage = totalPages - maxPagesToShow + 1;
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    pageNumbers.push(i);
+                }
+            }
+            return pageNumbers;
+        };
 
         return (
             <div>
@@ -941,18 +981,15 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                         <Search className="absolute left-3 top-3 text-gray-400" size={18} />
                         <input placeholder="Cari Nama Pasien / MRN..." value={filterName} onChange={e => { setFilterName(e.target.value); setCurrentPage(1); }} className="border border-gray-300 pl-10 p-2.5 rounded-lg w-full bg-white text-gray-900 focus:ring-primary focus:border-primary shadow-sm" />
                     </div>
-                    {/* Activity Filter */}
-                    <div>
-                        <select 
-                            className="border border-gray-300 p-2.5 rounded-lg w-full bg-white text-gray-900 focus:ring-primary focus:border-primary shadow-sm"
-                            value={filterActivityId}
-                            onChange={(e) => { setFilterActivityId(e.target.value); setCurrentPage(1); }}
-                        >
-                            <option value="">-- Semua Kegiatan --</option>
-                            {activities.map(act => (
-                                <option key={act.id} value={act.id}>{act.name} ({act.startDate})</option>
-                            ))}
-                        </select>
+                    {/* Activity Search Filter (Replaced Dropdown) */}
+                    <div className="relative">
+                        <Calendar className="absolute left-3 top-3 text-gray-400" size={18} />
+                        <input 
+                            placeholder="Cari Nama Kegiatan..." 
+                            value={filterActivityName} 
+                            onChange={(e) => { setFilterActivityName(e.target.value); setCurrentPage(1); }} 
+                            className="border border-gray-300 pl-10 p-2.5 rounded-lg w-full bg-white text-gray-900 focus:ring-primary focus:border-primary shadow-sm" 
+                        />
                     </div>
                      {/* Items Per Page */}
                      <div>
@@ -1014,41 +1051,60 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                     
                     {/* Pagination Controls */}
                     {totalPages > 1 && (
-                        <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
-                            <div className="text-xs text-gray-500">
+                        <div className="p-4 border-t border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div className="text-xs text-gray-500 font-medium">
                                 Menampilkan {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, flatFiltered.length)} dari {flatFiltered.length} data
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-1 items-center">
+                                {/* First & Prev */}
+                                <button 
+                                    onClick={() => paginate(1)} 
+                                    disabled={currentPage === 1}
+                                    className="p-1.5 rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-100 text-gray-600"
+                                    title="Halaman Pertama"
+                                >
+                                    <ChevronsLeft size={16} />
+                                </button>
                                 <button 
                                     onClick={() => paginate(currentPage - 1)} 
                                     disabled={currentPage === 1}
-                                    className="px-3 py-1 rounded border border-gray-300 bg-white disabled:opacity-50 hover:bg-gray-100 text-sm"
+                                    className="p-1.5 rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-100 text-gray-600 mr-2"
+                                    title="Sebelumnya"
                                 >
-                                    Prev
+                                    <ChevronLeft size={16} />
                                 </button>
-                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                    // Simple logic to show window of pages around current
-                                    let pNum = i + 1;
-                                    if(totalPages > 5) {
-                                        if(currentPage > 3) pNum = currentPage - 2 + i;
-                                        if(pNum > totalPages) pNum = i + (totalPages - 4); 
-                                    }
-                                    return (
-                                        <button 
-                                            key={pNum} 
-                                            onClick={() => paginate(pNum)}
-                                            className={`px-3 py-1 rounded border text-sm font-bold ${currentPage === pNum ? 'bg-primary text-white border-primary' : 'bg-white border-gray-300 hover:bg-gray-100'}`}
-                                        >
-                                            {pNum}
-                                        </button>
-                                    )
-                                })}
+
+                                {/* Numbers */}
+                                {getPageNumbers().map(pNum => (
+                                    <button 
+                                        key={pNum} 
+                                        onClick={() => paginate(pNum)}
+                                        className={`w-8 h-8 rounded-lg border text-sm font-bold flex items-center justify-center transition-colors ${
+                                            currentPage === pNum 
+                                            ? 'bg-primary text-white border-primary shadow-sm' 
+                                            : 'bg-white border-gray-300 hover:bg-gray-100 text-gray-700'
+                                        }`}
+                                    >
+                                        {pNum}
+                                    </button>
+                                ))}
+
+                                {/* Next & Last */}
                                 <button 
                                     onClick={() => paginate(currentPage + 1)} 
                                     disabled={currentPage === totalPages}
-                                    className="px-3 py-1 rounded border border-gray-300 bg-white disabled:opacity-50 hover:bg-gray-100 text-sm"
+                                    className="p-1.5 rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-100 text-gray-600 ml-2"
+                                    title="Selanjutnya"
                                 >
-                                    Next
+                                    <ChevronRight size={16} />
+                                </button>
+                                <button 
+                                    onClick={() => paginate(totalPages)} 
+                                    disabled={currentPage === totalPages}
+                                    className="p-1.5 rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-100 text-gray-600"
+                                    title="Halaman Terakhir"
+                                >
+                                    <ChevronsRight size={16} />
                                 </button>
                             </div>
                         </div>
