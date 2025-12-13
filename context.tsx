@@ -2,7 +2,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { AppState, Officer, Activity, News, Patient, ICD10, CarouselItem } from './types';
 
 // API Configuration
-const API_URL = 'http://localhost:5000/api';
+// Logic: Jika di localhost, pakai port 5000. Jika di hosting (domain asli), pakai relative path '/api'
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_URL = isLocal ? 'http://localhost:5000/api' : '/api';
 
 // --- MOCK DATA FOR OFFLINE MODE ---
 const MOCK_ACTIVITIES: Activity[] = [
@@ -86,7 +88,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Quick check if backend is reachable with a short timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1000); 
+      const timeoutId = setTimeout(() => controller.abort(), 2000); 
+      // Use HEAD request to check availability
       await fetch(`${API_URL}/activities`, { method: 'HEAD', signal: controller.signal });
       clearTimeout(timeoutId);
 
@@ -101,7 +104,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setNews(await resNews.json());
       setCarouselItems(await resCarousel.json());
     } catch (error) {
-      console.warn("Backend unavailable or timeout. Switching to Offline Mode.");
+      console.warn("Backend unavailable or timeout. Switching to Offline Mode.", error);
       setIsOffline(true);
       setActivities(loadLocal('pcc_activities', MOCK_ACTIVITIES));
       setNews(loadLocal('pcc_news', MOCK_NEWS));
@@ -227,9 +230,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 body: method !== 'DELETE' ? JSON.stringify(body) : undefined 
             });
             if (!res.ok) throw new Error("API Action Failed");
-            // If success, we can refetch or just let the local updater run below if we want optimistic, 
-            // but usually we rely on refetching. 
-            // However, to keep it simple, let's just refetch in the wrapper functions.
             return;
         } catch(e) {
             console.warn("API Action Failed, falling back to local:", e);

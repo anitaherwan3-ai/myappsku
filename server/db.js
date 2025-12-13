@@ -1,16 +1,20 @@
 const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 
 let db;
 
 async function initDB() {
+  // Use absolute path relative to this file to avoid CWD issues on hosting
+  const dbPath = path.join(__dirname, 'database.sqlite');
+  
   db = await open({
-    filename: './database.sqlite',
+    filename: dbPath,
     driver: sqlite3.Database
   });
 
-  console.log('Connected to SQLite Database.');
+  console.log(`Connected to SQLite Database at ${dbPath}`);
 
   // 1. Officers Table
   await db.exec(`
