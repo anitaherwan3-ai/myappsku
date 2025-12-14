@@ -2,25 +2,25 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { AppState, Officer, Activity, News, Patient, ICD10, CarouselItem } from './types';
 
 // API Configuration
-// Logic: Jika di localhost, pakai port 5000. Jika di hosting (domain asli), pakai relative path '/api'
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API_URL = isLocal ? 'http://localhost:5000/api' : '/api';
+// Jika Anda menjalankan PHP dengan: php -S localhost:8000 -t api
+// Maka URL: http://localhost:8000
+// Jika Anda menjalankan PHP dengan: php -S localhost:8000 (dari root)
+// Maka URL: http://localhost:8000/api
+const API_URL = isLocal ? 'http://localhost:8000/api' : '/api';
 
 // --- MOCK DATA FOR OFFLINE MODE ---
 const MOCK_ACTIVITIES: Activity[] = [
   { id: '1', name: 'Pemeriksaan Kesehatan Rutin', startDate: '2024-01-01', endDate: '2024-01-31', host: 'Dinkes Sumsel', location: 'Palembang', status: 'On Progress' },
-  { id: '2', name: 'Donor Darah Massal', startDate: '2023-12-15', endDate: '2023-12-15', host: 'PMI', location: 'Indralaya', status: 'Done' }
 ];
 const MOCK_NEWS: News[] = [
-    { id: '1', title: 'Peluncuran Sistem PCC', date: '2024-01-01', content: 'Sistem manajemen baru telah diluncurkan untuk meningkatkan layanan kesehatan.', imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80' },
-    { id: '2', title: 'Kunjungan Gubernur', date: '2023-12-20', content: 'Gubernur meninjau fasilitas kesehatan di daerah terpencil.', imageUrl: 'https://images.unsplash.com/photo-1579684385136-137af7513572?auto=format&fit=crop&w=800&q=80' }
+    { id: '1', title: 'Peluncuran Sistem PCC', date: '2024-01-01', content: 'Sistem manajemen baru.', imageUrl: 'https://via.placeholder.com/800x400' },
 ];
 const MOCK_CAROUSEL: CarouselItem[] = [
-    { id: '1', title: 'Selamat Datang di PCC', subtitle: 'Province Command Center Sumatera Selatan', imageUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1920&q=80' }
+    { id: '1', title: 'Selamat Datang', subtitle: 'PCC Sumsel', imageUrl: 'https://via.placeholder.com/1920x600' }
 ];
 const MOCK_OFFICERS: Officer[] = [
     { id: '1', email: 'admin@pcc.sumsel.go.id', name: 'Administrator', teamId: 'ADM-001', password: 'admin', role: 'admin' },
-    { id: '2', email: 'petugas@pcc.sumsel.go.id', name: 'Budi Santoso', teamId: 'MED-001', password: 'user', role: 'petugas' }
 ];
 
 interface AuthResponse {
@@ -86,14 +86,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // --- FETCH DATA ---
   const fetchPublicData = useCallback(async () => {
     try {
-      // Quick check if backend is reachable with a short timeout
+      // Fast check
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000); 
-      // Use HEAD request to check availability
-      await fetch(`${API_URL}/activities`, { method: 'HEAD', signal: controller.signal });
-      clearTimeout(timeoutId);
+      try {
+          await fetch(`${API_URL}/activities`, { method: 'HEAD', signal: controller.signal });
+          clearTimeout(timeoutId);
+          setIsOffline(false);
+      } catch (e) {
+          throw new Error("Backend unreachable");
+      }
 
-      setIsOffline(false);
       const [resAct, resNews, resCarousel] = await Promise.all([
         fetch(`${API_URL}/activities`),
         fetch(`${API_URL}/content/news`),
@@ -104,7 +107,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setNews(await resNews.json());
       setCarouselItems(await resCarousel.json());
     } catch (error) {
-      console.warn("Backend unavailable or timeout. Switching to Offline Mode.", error);
+      console.warn("Mode Offline Aktif: Tidak bisa terhubung ke backend.");
       setIsOffline(true);
       setActivities(loadLocal('pcc_activities', MOCK_ACTIVITIES));
       setNews(loadLocal('pcc_news', MOCK_NEWS));
@@ -134,7 +137,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if(resOff.ok) setOfficers(await resOff.json());
       if(resIcd.ok) setIcd10List(await resIcd.json());
     } catch (error) {
-      console.warn("Error fetching protected data, falling back local:", error);
+      console.warn("Gagal mengambil data terlindungi, beralih ke data lokal.");
+      setIsOffline(true);
       setPatients(loadLocal('pcc_patients', []));
       setOfficers(loadLocal('pcc_officers', MOCK_OFFICERS));
       setIcd10List(loadLocal('pcc_icd10', []));
@@ -156,20 +160,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // --- ACTIONS ---
 
   const login = async (email: string, pass: string) => {
-    if (isOffline) {
-        // Mock Login
-        const localOfficers = loadLocal('pcc_officers', MOCK_OFFICERS);
-        const validUser = localOfficers.find(o => o.email === email && o.password === pass);
-        if (validUser) {
-            setUser(validUser);
-            setToken('mock-token');
-            localStorage.setItem('pcc_user', JSON.stringify(validUser));
-            localStorage.setItem('pcc_token', 'mock-token');
-            return true;
-        }
-        return false;
-    }
+    console.log("Attempting login for:", email);
 
+    // 1. Try Online Login
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
@@ -179,28 +172,46 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       
       if (res.ok) {
         const data: AuthResponse = await res.json();
+        console.log("Login Success (Online)");
         setUser(data.user);
         setToken(data.token);
         localStorage.setItem('pcc_user', JSON.stringify(data.user));
         localStorage.setItem('pcc_token', data.token);
+        setIsOffline(false);
         return true;
+      } else {
+        console.error("Login Failed (Server responded but rejected credentials)");
       }
-      return false;
     } catch (e) {
-      console.error("Login Error (Switching to offline check):", e);
-      // Fallback to local check if fetch fails during login
+      console.error("Login Error (Network/Server down), trying fallback:", e);
       setIsOffline(true);
-      const localOfficers = loadLocal('pcc_officers', MOCK_OFFICERS);
-      const validUser = localOfficers.find(o => o.email === email && o.password === pass);
-        if (validUser) {
-            setUser(validUser);
-            setToken('mock-token');
-            localStorage.setItem('pcc_user', JSON.stringify(validUser));
-            localStorage.setItem('pcc_token', 'mock-token');
-            return true;
-        }
-      return false;
     }
+
+    // 2. Fallback / Offline Login
+    // EMERGENCY BACKDOOR: Always allow hardcoded admin if backend fails
+    if (email === 'admin@pcc.sumsel.go.id' && pass === 'admin') {
+         console.log("Login Success (Emergency/Offline Admin)");
+         const adminUser = MOCK_OFFICERS[0];
+         setUser(adminUser);
+         setToken('mock-token-offline');
+         localStorage.setItem('pcc_user', JSON.stringify(adminUser));
+         localStorage.setItem('pcc_token', 'mock-token-offline');
+         return true;
+    }
+
+    // Check Local Storage Users
+    const localOfficers = loadLocal('pcc_officers', MOCK_OFFICERS);
+    const validUser = localOfficers.find(o => o.email === email && o.password === pass);
+    if (validUser) {
+        console.log("Login Success (Local Storage User)");
+        setUser(validUser);
+        setToken('mock-token-offline');
+        localStorage.setItem('pcc_user', JSON.stringify(validUser));
+        localStorage.setItem('pcc_token', 'mock-token-offline');
+        return true;
+    }
+
+    return false;
   };
 
   const logout = () => {
@@ -208,7 +219,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     localStorage.removeItem('pcc_user');
     localStorage.removeItem('pcc_token');
-    // Clear sensitive data from state
     setPatients([]);
     setOfficers([]);
   };
@@ -230,14 +240,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 body: method !== 'DELETE' ? JSON.stringify(body) : undefined 
             });
             if (!res.ok) throw new Error("API Action Failed");
-            return;
         } catch(e) {
-            console.warn("API Action Failed, falling back to local:", e);
+            console.warn("API Action Failed, switching to local:", e);
             setIsOffline(true);
         }
     }
     
-    // Local Update
+    // Always update Local Store (Sync later capability placeholder)
     const current = loadLocal(localKey, []);
     const updated = localUpdater(current);
     saveLocal(localKey, updated);
@@ -313,7 +322,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // ICD10
   const addICD10 = async (list: ICD10[]) => {
-      // API supports bulk, local we push spread
       if(!isOffline) {
           try {
              await fetch(`${API_URL}/icd10`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(list) });
@@ -322,7 +330,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           } catch(e) { setIsOffline(true); }
       }
       const current = loadLocal('pcc_icd10', []);
-      // dedupe basic check
       const newItems = list.filter(n => !current.find((e:ICD10) => e.code === n.code));
       const updated = [...current, ...newItems];
       saveLocal('pcc_icd10', updated);

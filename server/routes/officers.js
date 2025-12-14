@@ -6,21 +6,23 @@ const { authenticate } = require('../middleware');
 const router = express.Router();
 
 router.get('/', authenticate, async (req, res) => {
-  const db = getDB();
-  // Usually we don't send passwords back, but for sync with current frontend logic we might
-  // For security, let's keep it safe and let frontend handle empty passwords on edit
-  const officers = await db.all('SELECT id, email, name, teamId, role FROM officers');
-  res.json(officers);
+  try {
+      const db = getDB();
+      const [rows] = await db.query('SELECT id, email, name, teamId, role FROM officers');
+      res.json(rows);
+  } catch (err) {
+      res.status(500).json({ error: err.message });
+  }
 });
 
 router.post('/', authenticate, async (req, res) => {
-  const db = getDB();
   const { id, email, name, teamId, password, role } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    await db.run(
-      'INSERT INTO officers (id, email, name, teamId, password, role) VALUES (?,?,?,?,?,?)',
-      [id, email, name, teamId, hashedPassword, role]
+    const db = getDB();
+    await db.query(
+        'INSERT INTO officers (id, email, name, teamId, password, role) VALUES (?, ?, ?, ?, ?, ?)',
+        [id, email, name, teamId, hashedPassword, role]
     );
     res.status(201).json({ message: 'Officer created' });
   } catch (err) {
@@ -29,21 +31,19 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 router.put('/:id', authenticate, async (req, res) => {
-  const db = getDB();
   const { email, name, teamId, password, role } = req.body;
   try {
+    const db = getDB();
+    let sql = 'UPDATE officers SET email=?, name=?, teamId=?, role=? WHERE id=?';
+    let params = [email, name, teamId, role, req.params.id];
+
     if (password && password.length > 0) {
         const hashedPassword = await bcrypt.hash(password, 10);
-        await db.run(
-            'UPDATE officers SET email=?, name=?, teamId=?, password=?, role=? WHERE id=?',
-            [email, name, teamId, hashedPassword, role, req.params.id]
-        );
-    } else {
-        await db.run(
-            'UPDATE officers SET email=?, name=?, teamId=?, role=? WHERE id=?',
-            [email, name, teamId, role, req.params.id]
-        );
+        sql = 'UPDATE officers SET email=?, name=?, teamId=?, role=?, password=? WHERE id=?';
+        params = [email, name, teamId, role, hashedPassword, req.params.id];
     }
+    
+    await db.query(sql, params);
     res.json({ message: 'Officer updated' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -51,9 +51,9 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 router.delete('/:id', authenticate, async (req, res) => {
-  const db = getDB();
   try {
-    await db.run('DELETE FROM officers WHERE id = ?', [req.params.id]);
+    const db = getDB();
+    await db.query('DELETE FROM officers WHERE id=?', [req.params.id]);
     res.json({ message: 'Officer deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -5,42 +5,52 @@ const { authenticate } = require('../middleware');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
-  const db = getDB();
-  const icd10 = await db.all('SELECT * FROM icd10 LIMIT 1000'); // Limit just in case
-  res.json(icd10);
+  try {
+      const db = getDB();
+      const [rows] = await db.query('SELECT * FROM icd10 LIMIT 1000');
+      res.json(rows);
+  } catch (err) {
+      res.status(500).json({ error: err.message });
+  }
 });
 
 router.post('/', authenticate, async (req, res) => {
-  const db = getDB();
   const items = Array.isArray(req.body) ? req.body : [req.body];
   
   try {
-    // Bulk insert using transaction for speed
-    await db.run('BEGIN TRANSACTION');
-    const stmt = await db.prepare('INSERT OR REPLACE INTO icd10 (code, name) VALUES (?, ?)');
-    for (const item of items) {
-        await stmt.run(item.code, item.name);
-    }
-    await stmt.finalize();
-    await db.run('COMMIT');
-    res.status(201).json({ message: `Imported ${items.length} ICD10 codes` });
+    const db = getDB();
+    const values = items.map(item => [item.code, item.name]);
+    
+    // MySQL Bulk Insert with ON DUPLICATE KEY UPDATE
+    await db.query(
+        'INSERT INTO icd10 (code, name) VALUES ? ON DUPLICATE KEY UPDATE name=VALUES(name)',
+        [values]
+    );
+    
+    res.status(201).json({ message: `Imported/Updated ${items.length} ICD10 codes` });
   } catch (err) {
-    await db.run('ROLLBACK');
     res.status(500).json({ error: err.message });
   }
 });
 
 router.put('/:code', authenticate, async (req, res) => {
-    const db = getDB();
-    const { name } = req.body;
-    await db.run('UPDATE icd10 SET name = ? WHERE code = ?', [name, req.params.code]);
-    res.json({ message: 'Updated' });
+    try {
+        const db = getDB();
+        await db.query('UPDATE icd10 SET name=? WHERE code=?', [req.body.name, req.params.code]);
+        res.json({ message: 'Updated' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 router.delete('/:code', authenticate, async (req, res) => {
-    const db = getDB();
-    await db.run('DELETE FROM icd10 WHERE code = ?', [req.params.code]);
-    res.json({ message: 'Deleted' });
+    try {
+        const db = getDB();
+        await db.query('DELETE FROM icd10 WHERE code=?', [req.params.code]);
+        res.json({ message: 'Deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 module.exports = router;

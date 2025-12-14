@@ -235,30 +235,33 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
     setShowDiagnosisSuggestions(false);
   };
 
-  const sectionClass = "bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden";
-  const labelClass = "block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide";
-  const inputClass = (hasError: boolean) => `w-full border ${hasError ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'} p-2.5 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm placeholder-gray-400`;
-  const headerClass = "font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-3 text-lg";
+  // --- STYLING CONSTANTS (Updated for Brighter Look) ---
+  const sectionClass = "bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-lg shadow-slate-200/50 relative overflow-hidden transition-all hover:shadow-xl";
+  const labelClass = "block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide";
+  const inputClass = (hasError: boolean) => `w-full border ${hasError ? 'border-red-500 ring-1 ring-red-500 bg-red-50' : 'border-slate-200 focus:border-primary'} p-3 rounded-xl bg-white text-slate-800 focus:ring-4 focus:ring-primary/10 transition-all shadow-sm placeholder-slate-300 text-sm md:text-base`;
+  const headerClass = "font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2 border-b pb-3 text-base md:text-lg";
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-xl overflow-hidden max-w-6xl mx-auto border border-gray-200 font-sans mb-10">
-      <div className="bg-gradient-to-r from-primary to-secondary p-6 text-white flex justify-between items-center shadow-md">
-         <h2 className="text-2xl font-bold flex items-center gap-3">
-           <User className="bg-white/20 p-1.5 rounded-full w-10 h-10" />
-           {initialData ? 'Edit Data Pasien' : 'Pendaftaran Pasien Baru'}
+    <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-6xl mx-auto border border-slate-100 font-sans mb-10 ring-1 ring-slate-100">
+      {/* Header Form */}
+      <div className="bg-gradient-to-r from-teal-500 to-emerald-500 p-4 md:p-6 text-white flex flex-col md:flex-row justify-between items-start md:items-center shadow-lg gap-4">
+         <h2 className="text-xl md:text-2xl font-bold flex items-center gap-3">
+           <User className="bg-white/20 p-1.5 rounded-full w-9 h-9 md:w-10 md:h-10 shrink-0 backdrop-blur-sm" />
+           {initialData ? 'Edit Data Pasien' : 'Pendaftaran Baru'}
          </h2>
-         <div className="text-right text-sm opacity-90 font-mono bg-white/10 px-3 py-1 rounded border border-white/20 shadow-inner">
+         <div className="text-right text-xs md:text-sm opacity-90 font-mono bg-white/10 px-3 py-1 rounded border border-white/20 shadow-inner self-end md:self-auto backdrop-blur-sm">
             {formData.mrn}
          </div>
       </div>
 
-      <div className="p-8 space-y-8 bg-slate-50">
+      {/* Main Content Body - Very Light & Airy Background */}
+      <div className="p-4 md:p-8 space-y-6 md:space-y-8 bg-gradient-to-br from-white via-slate-50 to-blue-50/20">
         
         {/* Section 1: Identitas & Kegiatan */}
         <div className={sectionClass}>
-            <div className="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-primary/80"></div>
             <h3 className={headerClass}>
-                <User className="text-primary" /> Identitas & Kegiatan
+                <User className="text-primary shrink-0" /> Identitas & Kegiatan
             </h3>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-4">
@@ -294,15 +297,15 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
 
                     <div>
                         <label className={labelClass}><AlertCircle size={14} className="inline mr-1"/> Kategori</label>
-                        <div className="flex bg-gray-200 p-1.5 rounded-lg shadow-inner">
-                            <button type="button" onClick={() => handleChange('category', 'Berobat')} className={`flex-1 py-2.5 rounded-md text-sm font-bold transition duration-200 ${formData.category === 'Berobat' ? 'bg-white shadow-md text-primary ring-1 ring-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>Berobat</button>
-                            <button type="button" onClick={() => handleChange('category', 'MCU')} className={`flex-1 py-2.5 rounded-md text-sm font-bold transition duration-200 ${formData.category === 'MCU' ? 'bg-white shadow-md text-accent ring-1 ring-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>MCU</button>
+                        <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                            <button type="button" onClick={() => handleChange('category', 'Berobat')} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition duration-200 ${formData.category === 'Berobat' ? 'bg-white shadow-md text-primary ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Berobat</button>
+                            <button type="button" onClick={() => handleChange('category', 'MCU')} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition duration-200 ${formData.category === 'MCU' ? 'bg-white shadow-md text-accent ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>MCU</button>
                         </div>
                     </div>
                 </div>
 
                 <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="col-span-2 md:col-span-1">
+                    <div className="col-span-1 md:col-span-1">
                         <label className={labelClass}>Nama Lengkap</label>
                         <input type="text" required placeholder="Contoh: Ahmad Abdullah" className={inputClass(!!errors.name)} value={formData.name || ''} onChange={e => handleChange('name', e.target.value)} />
                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
@@ -329,7 +332,7 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
                         </div>
                         <div>
                             <label className={labelClass}>Umur (Th)</label>
-                            <input type="number" readOnly={!!formData.dateOfBirth} required placeholder="0" className={inputClass(!!errors.age)} value={formData.age || ''} onChange={e => handleChange('age', parseInt(e.target.value))} />
+                            <input type="number" readOnly={!!formData.dateOfBirth} required placeholder="0" className={`${inputClass(!!errors.age)} bg-slate-50`} value={formData.age || ''} onChange={e => handleChange('age', parseInt(e.target.value))} />
                              {errors.age && <p className="text-red-500 text-xs mt-1">{errors.age}</p>}
                         </div>
                     </div>
@@ -339,7 +342,7 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
                         <input type="tel" required placeholder="08xx-xxxx-xxxx" className={inputClass(!!errors.phone)} value={formData.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
                         {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-1 md:col-span-2">
                         <label className={labelClass}>Alamat Lengkap</label>
                         <input type="text" required placeholder="Jl. ..." className={inputClass(false)} value={formData.address || ''} onChange={e => handleChange('address', e.target.value)} />
                     </div>
@@ -350,8 +353,8 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
         {/* Section 2: Vitals */}
         <div className={sectionClass}>
             <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
-            <h3 className={`${headerClass} text-blue-800 border-blue-100`}>
-              <Activity className="text-blue-600" /> Tanda-Tanda Vital & Riwayat
+            <h3 className={`${headerClass} text-blue-800 border-blue-50`}>
+              <Activity className="text-blue-600 shrink-0" /> Tanda-Tanda Vital & Riwayat
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-4">
                 <div className="space-y-1">
@@ -364,11 +367,11 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
                 </div>
                 <div className="space-y-1">
                    <label className={labelClass}><Calculator size={12} className="inline"/> BMI</label>
-                   <input type="number" readOnly className={`${inputClass(false)} bg-gray-100 border-transparent text-gray-500`} value={formData.bmi || ''} />
+                   <input type="number" readOnly className={`${inputClass(false)} bg-slate-50 text-slate-500`} value={formData.bmi || ''} />
                 </div>
-                <div className="space-y-1 lg:col-span-2">
+                <div className="space-y-1 col-span-2 lg:col-span-2">
                    <label className={labelClass}>Status BMI</label>
-                   <div className={`w-full p-2.5 rounded-lg text-center text-sm font-bold shadow-sm border ${formData.bmiStatus === 'Normal' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-orange-100 text-orange-700 border-orange-200'}`}>
+                   <div className={`w-full p-3 rounded-xl text-center text-sm font-bold shadow-sm border ${formData.bmiStatus === 'Normal' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
                       {formData.bmiStatus || '-'}
                    </div>
                 </div>
@@ -390,9 +393,9 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
         {/* Section 3: Conditional */}
         {formData.category === 'Berobat' ? (
           <div className={sectionClass}>
-             <div className="absolute top-0 left-0 w-1.5 h-full bg-green-500"></div>
-             <h3 className={`${headerClass} text-green-800 border-green-100`}>
-               <Stethoscope className="text-green-600" /> Pemeriksaan Klinis (Berobat)
+             <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
+             <h3 className={`${headerClass} text-emerald-800 border-emerald-50`}>
+               <Stethoscope className="text-emerald-600 shrink-0" /> Pemeriksaan Klinis (Berobat)
              </h3>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -405,7 +408,7 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
                 </div>
              </div>
              
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-green-50 p-6 rounded-lg border border-green-200 mt-6 shadow-sm relative z-20">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-emerald-50/50 p-4 md:p-6 rounded-2xl border border-emerald-100 mt-6 shadow-sm relative z-20">
                 <div className="md:col-span-2 relative" ref={searchRef}>
                    <label className={labelClass}><FileText size={16} className="inline mr-1"/> Diagnosis (ICD-10)</label>
                    <div className="relative">
@@ -420,7 +423,7 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
                          }}
                          onFocus={() => setShowDiagnosisSuggestions(true)}
                        />
-                       <Search size={18} className="absolute left-3 top-3 text-gray-400" />
+                       <Search size={18} className="absolute left-3 top-3.5 text-slate-400" />
                        {formData.diagnosisCode && (
                            <button 
                              type="button"
@@ -428,7 +431,7 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
                                  setDiagnosisSearch('');
                                  setFormData(prev => ({...prev, diagnosisCode: '', diagnosisName: ''}));
                              }}
-                             className="absolute right-3 top-3 text-gray-400 hover:text-red-500"
+                             className="absolute right-3 top-3.5 text-slate-400 hover:text-red-500"
                            >
                                <X size={18} />
                            </button>
@@ -437,22 +440,22 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
                    
                    {/* Suggestions Dropdown */}
                    {showDiagnosisSuggestions && diagnosisSearch && (
-                       <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-xl">
+                       <ul className="absolute z-50 w-full bg-white border border-slate-200 rounded-xl mt-1 max-h-60 overflow-y-auto shadow-xl ring-1 ring-slate-100">
                            {filteredDiagnoses.length > 0 ? (
                                filteredDiagnoses.map((icd) => (
                                    <li 
                                      key={icd.code}
                                      onClick={() => selectDiagnosis(icd.code, icd.name)}
-                                     className="px-4 py-3 hover:bg-green-50 cursor-pointer border-b border-gray-100 last:border-0"
+                                     className="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
                                    >
-                                       <div className="font-bold text-gray-800 text-sm flex justify-between">
+                                       <div className="font-bold text-slate-800 text-sm flex justify-between">
                                             <span>{icd.name}</span>
-                                            <span className="bg-gray-100 text-gray-600 px-2 rounded text-xs ml-2">{icd.code}</span>
+                                            <span className="bg-slate-100 text-slate-600 px-2 rounded text-xs ml-2 font-mono border border-slate-200">{icd.code}</span>
                                        </div>
                                    </li>
                                ))
                            ) : (
-                               <li className="px-4 py-3 text-gray-500 text-sm italic">Tidak ditemukan diagnosis yang cocok.</li>
+                               <li className="px-4 py-3 text-slate-500 text-sm italic">Tidak ditemukan diagnosis yang cocok.</li>
                            )}
                        </ul>
                    )}
@@ -473,23 +476,23 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
         ) : (
           <div className={`${sectionClass} space-y-8`}>
              <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500"></div>
-             <h3 className={`${headerClass} text-amber-800 border-amber-100`}>
-               <FileText className="text-amber-600" /> Formulir Medical Check-Up (MCU)
+             <h3 className={`${headerClass} text-amber-800 border-amber-50`}>
+               <FileText className="text-amber-600 shrink-0" /> Formulir Medical Check-Up (MCU)
              </h3>
              
              {/* 1. Kepala & Leher (Mata, THT, Gigi) */}
-             <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100">
-                 <h4 className="font-bold text-amber-900 mb-3 uppercase text-sm tracking-wider flex items-center gap-2"><Eye size={16}/> Kepala & Leher</h4>
+             <div className="bg-amber-50/30 p-4 md:p-6 rounded-2xl border border-amber-100">
+                 <h4 className="font-bold text-amber-900 mb-4 uppercase text-sm tracking-wider flex items-center gap-2"><Eye size={16}/> Kepala & Leher</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Split Visus */}
-                    <div className="bg-white p-2 rounded border border-amber-200 col-span-1 md:col-span-2 grid grid-cols-2 gap-2">
-                       <label className="col-span-2 text-xs font-bold text-amber-700 block border-b pb-1 mb-1">Visus Mata</label>
+                    <div className="bg-white p-3 rounded-xl border border-amber-100 col-span-1 md:col-span-2 grid grid-cols-2 gap-3 shadow-sm">
+                       <label className="col-span-2 text-xs font-bold text-amber-700 block border-b border-amber-50 pb-1 mb-1">Visus Mata</label>
                        <div>
-                          <label className="text-[10px] text-gray-500 uppercase">OD (Kanan)</label>
+                          <label className="text-[10px] text-slate-400 uppercase font-bold tracking-wide mb-1 block">OD (Kanan)</label>
                           <input placeholder="6/6" className={inputClass(false)} value={formData.visusOD || ''} onChange={e => handleChange('visusOD', e.target.value)} />
                        </div>
                        <div>
-                          <label className="text-[10px] text-gray-500 uppercase">OS (Kiri)</label>
+                          <label className="text-[10px] text-slate-400 uppercase font-bold tracking-wide mb-1 block">OS (Kiri)</label>
                           <input placeholder="6/6" className={inputClass(false)} value={formData.visusOS || ''} onChange={e => handleChange('visusOS', e.target.value)} />
                        </div>
                     </div>
@@ -527,8 +530,8 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
              </div>
 
              {/* 2. Thorax & Abdomen */}
-             <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100">
-                <h4 className="font-bold text-amber-900 mb-3 uppercase text-sm tracking-wider flex items-center gap-2"><Activity size={16}/> Thorax & Abdomen</h4>
+             <div className="bg-amber-50/30 p-4 md:p-6 rounded-2xl border border-amber-100">
+                <h4 className="font-bold text-amber-900 mb-4 uppercase text-sm tracking-wider flex items-center gap-2"><Activity size={16}/> Thorax & Abdomen</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className={labelClass}>Thorax (Jantung & Paru)</label>
@@ -542,8 +545,8 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
              </div>
 
              {/* 3. Bedah & Genitalia */}
-             <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100">
-                 <h4 className="font-bold text-amber-900 mb-3 uppercase text-sm tracking-wider flex items-center gap-2"><Shield size={16}/> Bedah & Genitalia</h4>
+             <div className="bg-amber-50/30 p-4 md:p-6 rounded-2xl border border-amber-100">
+                 <h4 className="font-bold text-amber-900 mb-4 uppercase text-sm tracking-wider flex items-center gap-2"><Shield size={16}/> Bedah & Genitalia</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                        <label className={labelClass}>Varicocele</label>
@@ -575,8 +578,8 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
              </div>
 
              {/* 4. Ekstremitas & Neurologis */}
-             <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100">
-                 <h4 className="font-bold text-amber-900 mb-3 uppercase text-sm tracking-wider flex items-center gap-2"><Brain size={16}/> Ekstremitas & Neurologis</h4>
+             <div className="bg-amber-50/30 p-4 md:p-6 rounded-2xl border border-amber-100">
+                 <h4 className="font-bold text-amber-900 mb-4 uppercase text-sm tracking-wider flex items-center gap-2"><Brain size={16}/> Ekstremitas & Neurologis</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                      <div>
                        <label className={labelClass}>Varises</label>
@@ -602,8 +605,8 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
              </div>
 
              {/* 5. Penunjang */}
-             <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100">
-                <h4 className="font-bold text-amber-900 mb-3 uppercase text-sm tracking-wider flex items-center gap-2"><FileBarChart size={16}/> Pemeriksaan Penunjang</h4>
+             <div className="bg-amber-50/30 p-4 md:p-6 rounded-2xl border border-amber-100">
+                <h4 className="font-bold text-amber-900 mb-4 uppercase text-sm tracking-wider flex items-center gap-2"><FileBarChart size={16}/> Pemeriksaan Penunjang</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                        <label className={labelClass}>Hasil EKG</label>
@@ -620,7 +623,7 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
                 </div>
              </div>
 
-             <div className="border-t-2 border-amber-200 pt-6 mt-6">
+             <div className="border-t-2 border-amber-100 pt-6 mt-6">
                <h4 className="text-lg font-bold text-amber-800 mb-4">Kesimpulan & Rekomendasi</h4>
                <div className="space-y-4">
                    <div>
@@ -638,9 +641,9 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel, isStandal
 
       </div>
 
-      <div className="bg-gray-50 px-8 py-5 flex justify-end gap-3 border-t border-gray-200">
-        <button type="button" onClick={onCancel} className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 font-bold transition shadow-sm">Batal</button>
-        <button type="submit" className="px-6 py-2.5 bg-primary text-white rounded-lg shadow-lg hover:bg-secondary font-bold flex items-center gap-2 transform active:scale-95 transition">
+      <div className="bg-slate-50 px-4 md:px-8 py-5 flex justify-end gap-3 border-t border-slate-200">
+        <button type="button" onClick={onCancel} className="px-6 py-2.5 text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 font-bold transition shadow-sm text-sm">Batal</button>
+        <button type="submit" className="px-6 py-2.5 bg-primary text-white rounded-xl shadow-lg hover:bg-secondary font-bold flex items-center gap-2 transform active:scale-95 transition text-sm">
            <Save size={18} /> Simpan Data
         </button>
       </div>

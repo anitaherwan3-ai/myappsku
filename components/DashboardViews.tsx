@@ -31,8 +31,8 @@ const validateImage = (file: File): boolean => {
 };
 
 // --- SHARED STYLES ---
-const tableHeadClass = "p-4 text-gray-600 font-bold text-xs uppercase tracking-wider border-b border-gray-200 bg-slate-100";
-const tableCellClass = "p-4 text-sm text-gray-700 border-b border-gray-100 align-middle";
+const tableHeadClass = "p-3 md:p-4 text-gray-600 font-bold text-xs uppercase tracking-wider border-b border-gray-200 bg-slate-100 whitespace-nowrap";
+const tableCellClass = "p-3 md:p-4 text-sm text-gray-700 border-b border-gray-100 align-middle";
 const tableRowClass = "hover:bg-slate-50 transition duration-150";
 
 // --- ACTIVITIES ---
@@ -58,14 +58,14 @@ export const ManageActivities = () => {
   if (isAdding || isEditing) {
     const defaultVal: Partial<Activity> = isEditing || {};
     return (
-      <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 text-gray-800">
+      <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg border border-gray-200 text-gray-800">
         <h3 className="text-xl font-bold mb-4 flex items-center gap-2 border-b pb-2">{isEditing ? <Edit size={20}/> : <Plus size={20}/>} {isEditing ? 'Edit Kegiatan' : 'Tambah Kegiatan'}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
               <label className="block text-sm font-bold text-gray-700 mb-1">Nama Kegiatan</label>
               <input name="name" placeholder="Nama Kegiatan" defaultValue={defaultVal.name} required className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-primary focus:border-primary bg-white text-gray-900" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Tanggal Mulai</label>
                 <input name="startDate" type="date" defaultValue={defaultVal.startDate} required className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-primary focus:border-primary bg-white text-gray-900" />
@@ -92,8 +92,8 @@ export const ManageActivities = () => {
               </select>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => { setIsAdding(false); setIsEditing(null); }} className="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50">Batal</button>
-            <button type="submit" className="bg-primary text-white px-5 py-2.5 rounded-lg font-medium hover:bg-secondary shadow-lg">Simpan</button>
+            <button type="button" onClick={() => { setIsAdding(false); setIsEditing(null); }} className="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 flex-1 md:flex-none">Batal</button>
+            <button type="submit" className="bg-primary text-white px-5 py-2.5 rounded-lg font-medium hover:bg-secondary shadow-lg flex-1 md:flex-none">Simpan</button>
           </div>
         </form>
       </div>
@@ -102,14 +102,14 @@ export const ManageActivities = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold text-gray-800">Kelola Kegiatan</h2>
-        <button onClick={() => setIsAdding(true)} className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-secondary shadow-md font-medium">
+        <button onClick={() => setIsAdding(true)} className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-secondary shadow-md font-medium w-full md:w-auto justify-center">
           <Plus size={18} /> Tambah Kegiatan
         </button>
       </div>
       <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-200">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse min-w-[600px]">
           <thead>
             <tr>
               <th className={tableHeadClass}>Nama</th>
@@ -122,11 +122,11 @@ export const ManageActivities = () => {
           <tbody>
             {activities.map(a => (
               <tr key={a.id} className={tableRowClass}>
-                <td className={`${tableCellClass} font-semibold text-gray-900`}>{a.name}</td>
+                <td className={`${tableCellClass} font-semibold text-gray-900 min-w-[200px]`}>{a.name}</td>
                 <td className={`${tableCellClass} whitespace-nowrap`}>{a.startDate} <span className="text-gray-400">/</span> {a.endDate}</td>
                 <td className={tableCellClass}>{a.host}<br/><span className="text-gray-500 text-xs">{a.location}</span></td>
                 <td className={tableCellClass}>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide whitespace-nowrap ${
                     a.status === 'On Progress' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 
                     a.status === 'Done' ? 'bg-slate-200 text-slate-700 border border-slate-300' : 'bg-blue-100 text-blue-700 border border-blue-200'
                   }`}>{a.status}</span>
@@ -194,8 +194,8 @@ export const ManageOfficers = () => {
                  </select>
             </div>
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={() => { setIsAdding(false); setIsEditing(null); }} className="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50">Batal</button>
-              <button type="submit" className="bg-primary text-white px-5 py-2.5 rounded-lg font-medium hover:bg-secondary shadow-lg">Simpan</button>
+              <button type="button" onClick={() => { setIsAdding(false); setIsEditing(null); }} className="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 flex-1">Batal</button>
+              <button type="submit" className="bg-primary text-white px-5 py-2.5 rounded-lg font-medium hover:bg-secondary shadow-lg flex-1">Simpan</button>
             </div>
           </form>
         </div>
@@ -204,14 +204,14 @@ export const ManageOfficers = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold text-gray-800">Kelola Petugas</h2>
-        <button onClick={() => setIsAdding(true)} className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-secondary shadow-md font-medium">
+        <button onClick={() => setIsAdding(true)} className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-secondary shadow-md font-medium w-full md:w-auto justify-center">
           <Plus size={18} /> Tambah Petugas
         </button>
       </div>
       <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-200">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse min-w-[600px]">
           <thead>
             <tr>
               <th className={tableHeadClass}>Nama</th>
@@ -304,8 +304,8 @@ export const ManageNews = () => {
                   <textarea name="content" placeholder="Keterangan Berita" rows={6} defaultValue={defaultVal.content} required className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-primary bg-white" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => { setIsAdding(false); setIsEditing(null); }} className="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50">Batal</button>
-                <button type="submit" className="bg-primary text-white px-5 py-2.5 rounded-lg font-medium hover:bg-secondary shadow-lg">Simpan</button>
+                <button type="button" onClick={() => { setIsAdding(false); setIsEditing(null); }} className="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 flex-1">Batal</button>
+                <button type="submit" className="bg-primary text-white px-5 py-2.5 rounded-lg font-medium hover:bg-secondary shadow-lg flex-1">Simpan</button>
               </div>
             </form>
           </div>
@@ -314,9 +314,9 @@ export const ManageNews = () => {
 
     return (
         <div>
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 className="text-2xl font-bold text-gray-800">Kelola Berita</h2>
-            <button onClick={() => setIsAdding(true)} className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-secondary shadow-md font-medium">
+            <button onClick={() => setIsAdding(true)} className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-secondary shadow-md font-medium w-full md:w-auto justify-center">
               <Plus size={18} /> Tambah Berita
             </button>
           </div>
@@ -386,20 +386,20 @@ export const ManageICD10 = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Kelola ICD-10</h2>
-                <div className="flex gap-2">
-                    <button onClick={() => setIsAddingManual(true)} className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium hover:bg-secondary">
+                <div className="flex gap-2 w-full md:w-auto">
+                    <button onClick={() => setIsAddingManual(true)} className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium hover:bg-secondary flex-1 justify-center md:flex-none">
                         <Plus size={18} /> Manual
                     </button>
-                    <button className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 relative overflow-hidden font-medium hover:bg-green-700">
+                    <button className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 relative overflow-hidden font-medium hover:bg-green-700 flex-1 justify-center md:flex-none">
                        <Upload size={18} /> Excel
                        <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
                     </button>
                 </div>
             </div>
             {(isAddingManual || isEditing) && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-2xl border border-gray-200">
                         <h3 className="font-bold text-xl mb-4 text-gray-900">{isEditing ? 'Edit ICD-10' : 'Tambah ICD-10'}</h3>
                         <form onSubmit={handleManualSubmit} className="space-y-4">
@@ -412,35 +412,37 @@ export const ManageICD10 = () => {
                                 <input name="name" placeholder="Nama Penyakit" defaultValue={isEditing?.name} required className="w-full border border-gray-300 p-2.5 rounded-lg bg-white text-gray-900" />
                             </div>
                             <div className="flex gap-3 justify-end pt-2">
-                                <button type="button" onClick={() => {setIsAddingManual(false); setIsEditing(null);}} className="text-gray-700 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-medium">Batal</button>
-                                <button type="submit" className="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-secondary">Simpan</button>
+                                <button type="button" onClick={() => {setIsAddingManual(false); setIsEditing(null);}} className="text-gray-700 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-medium flex-1">Batal</button>
+                                <button type="submit" className="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-secondary flex-1">Simpan</button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
             <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr>
-                            <th className={`${tableHeadClass} w-32`}>Kode</th>
-                            <th className={tableHeadClass}>Nama Penyakit</th>
-                            <th className={`${tableHeadClass} w-24`}>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {icd10List.map((icd, idx) => (
-                            <tr key={idx} className={tableRowClass}>
-                                <td className={`${tableCellClass} font-mono font-bold text-primary`}>{icd.code}</td>
-                                <td className={`${tableCellClass} font-semibold text-gray-800`}>{icd.name}</td>
-                                <td className={`${tableCellClass} flex gap-2`}>
-                                    <button onClick={() => setIsEditing(icd)} className="text-blue-500 hover:text-blue-700"><Edit size={16}/></button>
-                                    <button onClick={() => deleteICD10(icd.code)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-                                </td>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[500px]">
+                        <thead>
+                            <tr>
+                                <th className={`${tableHeadClass} w-32`}>Kode</th>
+                                <th className={tableHeadClass}>Nama Penyakit</th>
+                                <th className={`${tableHeadClass} w-24`}>Aksi</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {icd10List.map((icd, idx) => (
+                                <tr key={idx} className={tableRowClass}>
+                                    <td className={`${tableCellClass} font-mono font-bold text-primary`}>{icd.code}</td>
+                                    <td className={`${tableCellClass} font-semibold text-gray-800`}>{icd.name}</td>
+                                    <td className={`${tableCellClass} flex gap-2`}>
+                                        <button onClick={() => setIsEditing(icd)} className="text-blue-500 hover:text-blue-700"><Edit size={16}/></button>
+                                        <button onClick={() => deleteICD10(icd.code)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
                 {icd10List.length === 0 && <p className="p-8 text-center text-gray-500">Belum ada data. Silahkan upload file Excel.</p>}
             </div>
         </div>
@@ -486,7 +488,7 @@ export const ManageCarousel = () => {
                         <input placeholder="Sub Judul" value={subtitle} onChange={e => setSubtitle(e.target.value)} className="border border-gray-300 p-2.5 rounded-lg w-full bg-white" />
                     </div>
                 </div>
-                <button onClick={handleAdd} className="mt-4 bg-primary text-white px-6 py-2.5 rounded-lg hover:bg-secondary font-medium shadow-md">Tambah Banner</button>
+                <button onClick={handleAdd} className="mt-4 bg-primary text-white px-6 py-2.5 rounded-lg hover:bg-secondary font-medium shadow-md w-full md:w-auto">Tambah Banner</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {carouselItems.map(item => (
@@ -496,7 +498,7 @@ export const ManageCarousel = () => {
                             <h4 className="text-white font-bold text-xl">{item.title}</h4>
                             <p className="text-gray-200">{item.subtitle}</p>
                         </div>
-                        <button onClick={() => deleteCarousel(item.id)} className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition shadow-sm"><Trash2 size={16} /></button>
+                        <button onClick={() => deleteCarousel(item.id)} className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full opacity-100 md:opacity-0 group-hover:opacity-100 transition shadow-sm"><Trash2 size={16} /></button>
                     </div>
                 ))}
             </div>
@@ -612,7 +614,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
     if (printListActivity) {
         return (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[100] overflow-y-auto print:bg-white print:fixed print:inset-0 font-sans text-gray-900">
-                <div className="bg-white p-8 rounded-xl max-w-5xl w-full shadow-2xl print:shadow-none print:w-full border border-gray-100 print:border-none print:p-0">
+                <div className="bg-white p-6 md:p-8 rounded-xl max-w-5xl w-full shadow-2xl print:shadow-none print:w-full border border-gray-100 print:border-none print:p-0">
                     <div className="flex justify-between items-start mb-6 print:hidden">
                         <div className="flex items-center gap-3">
                             <h2 className="text-2xl font-bold text-gray-800">Cetak Laporan Kegiatan</h2>
@@ -623,20 +625,20 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                         </div>
                     </div>
                     {/* ... (Print Content Kept the same) ... */}
-                    <div className="text-gray-950 font-sans print:font-sans leading-relaxed text-sm">
+                    <div className="text-gray-950 font-sans print:font-sans leading-relaxed text-sm overflow-x-auto">
                         <div className="text-center border-b-2 border-black pb-4 mb-6 print:mb-4">
                             <h1 className="text-2xl font-bold uppercase tracking-widest text-black mb-1 print:text-2xl">PCC Sumsel</h1>
                             <p className="text-xs tracking-[0.3em] uppercase font-bold text-black print:text-xs">Province Command Center Sumatera Selatan</p>
                         </div>
                         <div className="mb-6">
                             <h2 className="text-xl font-bold text-center uppercase mb-2">Laporan Rekam Medis Kegiatan</h2>
-                            <div className="flex justify-center gap-8 text-sm mt-4">
+                            <div className="flex flex-col md:flex-row justify-center gap-2 md:gap-8 text-sm mt-4 text-center">
                                 <div><span className="font-bold">Kegiatan:</span> {printListActivity.activity?.name}</div>
                                 <div><span className="font-bold">Tanggal:</span> {printListActivity.activity?.startDate}</div>
                                 <div><span className="font-bold">Lokasi:</span> {printListActivity.activity?.location}</div>
                             </div>
                         </div>
-                        <table className="w-full text-left text-[12px] border-collapse border border-black">
+                        <table className="w-full text-left text-[12px] border-collapse border border-black min-w-[600px]">
                             <thead>
                                 <tr className="bg-gray-100 print:bg-gray-100">
                                     <th className="border border-black p-2 text-center w-10">No</th>
@@ -680,7 +682,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
         );
     }
 
-    // 3. SINGLE PATIENT PRINT MODAL (UNIFORM FONTS)
+    // 3. SINGLE PATIENT PRINT MODAL
     if (viewingPatient) {
         const act = activities.find(a => a.id === viewingPatient.activityId);
         return (
@@ -691,40 +693,37 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                     <div className="flex justify-between items-start p-6 border-b border-gray-100 bg-white shrink-0 print:hidden">
                         <div className="flex items-center gap-3">
                             <div className="bg-primary/10 p-2 rounded-full text-primary"><ClipboardList size={24}/></div>
-                            <h2 className="text-2xl font-bold text-gray-800">Detail Rekam Medis</h2>
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-800">Detail Rekam Medis</h2>
                         </div>
-                        <div className="space-x-2">
-                             <button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 inline-flex transition shadow-md font-bold"><Printer size={16}/> Cetak</button>
-                             <button onClick={() => setViewingPatient(null)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition font-bold flex items-center gap-2"><X size={16}/> Close</button>
+                        <div className="space-x-2 flex">
+                             <button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded-lg flex items-center gap-2 transition shadow-md font-bold text-sm"><Printer size={16}/> <span className="hidden md:inline">Cetak</span></button>
+                             <button onClick={() => setViewingPatient(null)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 md:px-4 py-2 rounded-lg transition font-bold flex items-center gap-2 text-sm"><X size={16}/> <span className="hidden md:inline">Close</span></button>
                         </div>
                     </div>
 
                     {/* SCROLLABLE CONTENT / PRINT CONTENT */}
-                    <div className="p-8 overflow-y-auto custom-scrollbar print:p-0 print:overflow-visible text-gray-950 font-sans print:font-sans leading-relaxed text-sm">
+                    <div className="p-4 md:p-8 overflow-y-auto custom-scrollbar print:p-0 print:overflow-visible text-gray-950 font-sans print:font-sans leading-relaxed text-sm">
                         
-                        {/* Header Print Only - PROFESSIONAL LETTERHEAD */}
+                        {/* Header Print Only */}
                         <div className="hidden print:flex flex-row items-center justify-center gap-6 mb-6 border-b-4 border-double border-black pb-4">
-                            {/* Logo Placeholder - You can replace 'PCC' text with an <img> tag if you have a URL */}
-                            <div className="w-20 h-20 flex items-center justify-center border-2 border-black rounded-full font-bold text-xl">
-                                PCC
-                            </div>
+                            <div className="w-20 h-20 flex items-center justify-center border-2 border-black rounded-full font-bold text-xl">PCC</div>
                             <div className="text-center flex-1">
                                 <h3 className="text-lg font-bold uppercase text-black font-serif tracking-wide">PEMERINTAH PROVINSI SUMATERA SELATAN</h3>
                                 <h2 className="text-xl font-bold uppercase text-black font-serif tracking-wider">DINAS KESEHATAN</h2>
                                 <h1 className="text-2xl font-black uppercase text-black font-sans tracking-widest mt-1">PROVINCE COMMAND CENTER (PCC)</h1>
                                 <p className="text-sm text-black mt-1 font-serif italic">Jl. Merdeka No. 10, Palembang - Sumatera Selatan | Telp: 0811-7870-119</p>
                             </div>
-                             {/* Logo Placeholder Right (Optional balance) */}
                              <div className="w-20 h-20"></div> 
                         </div>
 
+                        {/* ... (Print Layout remains similar but optimized for mobile view on screen) ... */}
                         <div className="hidden print:block text-center mb-6">
                             <h2 className="text-lg font-bold uppercase underline mt-4 text-center">LEMBAR HASIL PEMERIKSAAN KESEHATAN</h2>
                             <p className="text-xs text-center font-mono mt-1">Nomor Dokumen: {viewingPatient.mrn}</p>
                         </div>
                         
                         {/* Identity Grid */}
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-2 mb-6 border-b border-gray-300 pb-6 print:border-none print:text-[12px] print:font-serif">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mb-6 border-b border-gray-300 pb-6 print:border-none print:text-[12px] print:font-serif print:grid-cols-2">
                              {[
                                  ['No. RM', viewingPatient.mrn, true],
                                  ['Tanggal', viewingPatient.visitDate],
@@ -733,7 +732,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                                  ['Jenis Kelamin', viewingPatient.gender === 'L' ? 'Laki-Laki' : 'Perempuan'],
                                  ['Kegiatan', act?.name]
                              ].map(([label, val, isBold], idx) => (
-                                 <div key={idx} className="grid grid-cols-[140px_1fr] items-baseline">
+                                 <div key={idx} className="grid grid-cols-[120px_1fr] md:grid-cols-[140px_1fr] items-baseline">
                                      <span className="uppercase text-[11px] font-bold text-gray-600 print:text-black">{label} :</span> 
                                      <span className={`${isBold ? 'font-bold' : 'font-medium'} text-[13px] print:text-black uppercase print:text-[12px]`}>{val}</span>
                                  </div>
@@ -764,8 +763,8 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                                 </tbody>
                             </table>
 
-                            {/* Screen Version Vitals */}
-                            <div className="grid grid-cols-4 gap-4 print:hidden">
+                            {/* Screen Version Vitals - Responsive Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:hidden">
                                 {[
                                     ['Tekanan Darah', viewingPatient.bloodPressure],
                                     ['Nadi', `${viewingPatient.pulse} x/mnt`],
@@ -788,7 +787,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                                     <div className="border-l-2 border-gray-300 pl-3 print:border-black text-[13px] print:text-[12px]">{viewingPatient.historyOfIllness || '-'}</div>
                                 </div>
                                 
-                                <div className="grid grid-cols-2 gap-8 print:gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 print:gap-4 print:grid-cols-2">
                                     {[
                                         ['Anamnesis (Subjektif)', viewingPatient.subjective],
                                         ['Pemeriksaan Fisik (Objektif)', viewingPatient.physicalExam]
@@ -802,7 +801,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
 
                                 <div className="border border-gray-300 p-4 rounded print:border print:border-black print:rounded-none">
                                     <span className="font-bold block text-black mb-4 text-sm uppercase tracking-wide border-b border-gray-300 print:border-black pb-1 print:text-center print:bg-gray-100">Diagnosis & Terapi</span>
-                                    <div className="grid grid-cols-2 gap-4 print:gap-0 print:divide-x print:divide-black">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:gap-0 print:divide-x print:divide-black print:grid-cols-2">
                                         <div className="print:p-2">
                                             <span className="text-[10px] uppercase font-bold text-gray-500 print:text-black">Diagnosis (ICD-10)</span>
                                             <p className="font-bold text-[14px] text-black print:text-[12px]">{viewingPatient.diagnosisCode} - {viewingPatient.diagnosisName}</p>
@@ -823,14 +822,14 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                                 <div className="font-bold text-center border-y-2 border-black py-2 uppercase tracking-wide text-black mb-4 text-sm bg-gray-100 print:bg-gray-200 print:text-[12px] print:border-black">Hasil Pemeriksaan MCU Lengkap</div>
                                 
                                 {/* MCU Table Structure for Print */}
-                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 text-[12px] print:block">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 text-[12px] print:block">
                                     {/* MCU Groups */}
                                     {[
                                         { title: 'Kepala & Leher', items: [['Visus OD', viewingPatient.visusOD], ['Visus OS', viewingPatient.visusOS], ['Buta Warna', viewingPatient.colorBlind], ['Gigi', viewingPatient.teeth], ['THT', `${viewingPatient.rightEar}/${viewingPatient.leftEar}`]] },
                                         { title: 'Tubuh & Bedah', items: [['Thorax', viewingPatient.thorax], ['Abdomen', viewingPatient.abdomen], ['Hernia', viewingPatient.hernia], ['Varicocele', viewingPatient.varicocele], ['Haemoroid', viewingPatient.hemorrhoids]] },
                                         { title: 'Ekstremitas & Neuro', items: [['Varises', viewingPatient.varicose], ['Reflek Pupil', viewingPatient.reflexPupil], ['Reflek Patella', viewingPatient.reflexPatella], ['Reflek Achiles', viewingPatient.reflexAchilles]] }
                                     ].map((group, idx) => (
-                                        <div key={idx} className="print:mb-4">
+                                        <div key={idx} className="print:mb-4 border-b md:border-none pb-4 md:pb-0">
                                             <h4 className="font-bold border-b border-black mb-2 pb-1 text-xs uppercase bg-gray-50 print:bg-transparent print:text-[11px] print:border-black">{group.title}</h4>
                                             
                                             {/* Screen List */}
@@ -856,11 +855,11 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                                 </div>
                                 <div className="mt-4 pt-4 border-t border-black">
                                      <h4 className="font-bold text-xs uppercase mb-2 bg-gray-100 print:bg-gray-200 p-1 print:border print:border-black print:text-center">Pemeriksaan Penunjang & Kesimpulan</h4>
-                                     <div className="grid grid-cols-2 gap-4 text-[12px] print:border print:border-black print:p-0 print:gap-0">
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[12px] print:border print:border-black print:p-0 print:gap-0">
                                          <div className="print:border-b print:border-black print:p-2 print:col-span-2"><span className="block font-bold">EKG/Rontgen:</span> {viewingPatient.ekgResult || '-'} / {viewingPatient.xrayResult || '-'}</div>
                                          <div className="print:border-b print:border-black print:p-2 print:col-span-2"><span className="block font-bold">Lab:</span> {viewingPatient.labSummary || '-'}</div>
-                                         <div className="col-span-2 mt-2 border border-black p-2 bg-gray-50 print:bg-white print:border-none print:border-b print:border-black print:m-0 print:p-2"><span className="block font-bold">KESIMPULAN:</span> {viewingPatient.mcuConclusion}</div>
-                                         <div className="col-span-2 border border-black p-2 mt-2 bg-gray-50 print:bg-white print:border-none print:m-0 print:p-2"><span className="block font-bold">SARAN:</span> {viewingPatient.mcuRecommendation}</div>
+                                         <div className="md:col-span-2 mt-2 border border-black p-2 bg-gray-50 print:bg-white print:border-none print:border-b print:border-black print:m-0 print:p-2"><span className="block font-bold">KESIMPULAN:</span> {viewingPatient.mcuConclusion}</div>
+                                         <div className="md:col-span-2 border border-black p-2 mt-2 bg-gray-50 print:bg-white print:border-none print:m-0 print:p-2"><span className="block font-bold">SARAN:</span> {viewingPatient.mcuRecommendation}</div>
                                      </div>
                                 </div>
                             </div>
@@ -874,13 +873,6 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                                 <p className="text-[10px] mt-1 uppercase font-bold">Dokter Pemeriksa</p>
                             </div>
                         </div>
-
-                        {/* Audit Note */}
-                        {viewingPatient.lastModifiedBy && (
-                            <div className="mt-8 text-[10px] text-gray-500 text-right print:block hidden border-t border-gray-300 pt-1">
-                                <i>Terakhir diubah oleh: {viewingPatient.lastModifiedBy} pada {viewingPatient.lastModifiedAt}</i>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
@@ -915,15 +907,15 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
         // Optimized Pagination Numbers Logic
         const getPageNumbers = () => {
             const pageNumbers = [];
-            const maxPagesToShow = 5;
+            const maxPagesToShow = window.innerWidth < 768 ? 3 : 5;
             
             if (totalPages <= maxPagesToShow) {
                 for (let i = 1; i <= totalPages; i++) {
                     pageNumbers.push(i);
                 }
             } else {
-                let startPage = currentPage - 2;
-                let endPage = currentPage + 2;
+                let startPage = currentPage - (maxPagesToShow === 3 ? 1 : 2);
+                let endPage = currentPage + (maxPagesToShow === 3 ? 1 : 2);
 
                 if (startPage < 1) {
                     startPage = 1;
@@ -965,7 +957,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <h2 className="text-2xl font-bold text-gray-800">Database Pasien</h2>
-                    <div className="flex gap-2 w-full md:w-auto">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                         <button onClick={() => handleExportExcel(flatFiltered)} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 shadow-md font-medium justify-center flex-1 md:flex-none">
                             <Download size={18} /> Export Excel
                         </button>
@@ -978,17 +970,17 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                 <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                      {/* Name Search */}
                      <div className="relative">
-                        <Search className="absolute left-3 top-3 text-gray-400" size={18} />
-                        <input placeholder="Cari Nama Pasien / MRN..." value={filterName} onChange={e => { setFilterName(e.target.value); setCurrentPage(1); }} className="border border-gray-300 pl-10 p-2.5 rounded-lg w-full bg-white text-gray-900 focus:ring-primary focus:border-primary shadow-sm" />
+                        <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+                        <input placeholder="Cari Nama Pasien / MRN..." value={filterName} onChange={e => { setFilterName(e.target.value); setCurrentPage(1); }} className="border border-gray-300 pl-10 p-2.5 rounded-lg w-full bg-white text-gray-900 focus:ring-primary focus:border-primary shadow-sm text-sm" />
                     </div>
-                    {/* Activity Search Filter (Replaced Dropdown) */}
+                    {/* Activity Search Filter */}
                     <div className="relative">
-                        <Calendar className="absolute left-3 top-3 text-gray-400" size={18} />
+                        <Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} />
                         <input 
                             placeholder="Cari Nama Kegiatan..." 
                             value={filterActivityName} 
                             onChange={(e) => { setFilterActivityName(e.target.value); setCurrentPage(1); }} 
-                            className="border border-gray-300 pl-10 p-2.5 rounded-lg w-full bg-white text-gray-900 focus:ring-primary focus:border-primary shadow-sm" 
+                            className="border border-gray-300 pl-10 p-2.5 rounded-lg w-full bg-white text-gray-900 focus:ring-primary focus:border-primary shadow-sm text-sm" 
                         />
                     </div>
                      {/* Items Per Page */}
@@ -1007,7 +999,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                 
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full text-left border-collapse min-w-[700px]">
                             <thead>
                                 <tr>
                                     <th className={tableHeadClass}>MRN</th>
@@ -1022,12 +1014,12 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                                     const actName = activities.find(a => a.id === p.activityId)?.name || 'Unknown';
                                     return (
                                         <tr key={p.id} className={tableRowClass}>
-                                            <td className={`${tableCellClass} text-xs font-mono font-bold text-slate-600`}>{p.mrn}</td>
+                                            <td className={`${tableCellClass} text-xs font-mono font-bold text-slate-600 whitespace-nowrap`}>{p.mrn}</td>
                                             <td className={`${tableCellClass} font-semibold text-gray-900`}>{p.name}</td>
                                             <td className={tableCellClass}>
                                                 <button 
                                                     onClick={() => showActivityDetail(p.activityId)}
-                                                    className="text-xs text-blue-600 hover:underline text-left"
+                                                    className="text-xs text-blue-600 hover:underline text-left line-clamp-2"
                                                 >
                                                     {actName}
                                                 </button>
@@ -1053,14 +1045,14 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                     {totalPages > 1 && (
                         <div className="p-4 border-t border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
                             <div className="text-xs text-gray-500 font-medium">
-                                Menampilkan {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, flatFiltered.length)} dari {flatFiltered.length} data
+                                Data {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, flatFiltered.length)} dari {flatFiltered.length}
                             </div>
                             <div className="flex gap-1 items-center">
                                 {/* First & Prev */}
                                 <button 
                                     onClick={() => paginate(1)} 
                                     disabled={currentPage === 1}
-                                    className="p-1.5 rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-100 text-gray-600"
+                                    className="p-2 rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-100 text-gray-600"
                                     title="Halaman Pertama"
                                 >
                                     <ChevronsLeft size={16} />
@@ -1068,7 +1060,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                                 <button 
                                     onClick={() => paginate(currentPage - 1)} 
                                     disabled={currentPage === 1}
-                                    className="p-1.5 rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-100 text-gray-600 mr-2"
+                                    className="p-2 rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-100 text-gray-600 mr-2"
                                     title="Sebelumnya"
                                 >
                                     <ChevronLeft size={16} />
@@ -1093,7 +1085,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                                 <button 
                                     onClick={() => paginate(currentPage + 1)} 
                                     disabled={currentPage === totalPages}
-                                    className="p-1.5 rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-100 text-gray-600 ml-2"
+                                    className="p-2 rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-100 text-gray-600 ml-2"
                                     title="Selanjutnya"
                                 >
                                     <ChevronRight size={16} />
@@ -1101,7 +1093,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                                 <button 
                                     onClick={() => paginate(totalPages)} 
                                     disabled={currentPage === totalPages}
-                                    className="p-1.5 rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-100 text-gray-600"
+                                    className="p-2 rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-100 text-gray-600"
                                     title="Halaman Terakhir"
                                 >
                                     <ChevronsRight size={16} />
@@ -1118,7 +1110,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
     return (
         <div className="flex flex-col md:flex-row gap-6 font-sans h-[calc(100vh-140px)]">
             {/* Left Sidebar Filter */}
-            <div className="w-full md:w-64 bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col p-4 shrink-0 h-fit md:h-full">
+            <div className="w-full md:w-64 bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col p-4 shrink-0 h-auto md:h-full">
                 <div className="flex justify-between items-center mb-4 border-b pb-2">
                     <h3 className="font-bold text-gray-800 flex items-center gap-2"><Filter size={18}/> Filter</h3>
                     {(selectedYear || filterName) && (
@@ -1131,11 +1123,11 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                     )}
                 </div>
                 
-                <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
                     <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tahun</label>
                         <select 
-                            className="w-full border border-gray-300 p-2 rounded-lg bg-slate-50 font-bold text-gray-700 focus:ring-primary"
+                            className="w-full border border-gray-300 p-2 rounded-lg bg-slate-50 font-bold text-gray-700 focus:ring-primary text-sm"
                             value={selectedYear} 
                             onChange={e => { setSelectedYear(e.target.value); setSelectedMonth(''); }}
                         >
@@ -1146,7 +1138,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                     <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bulan</label>
                         <select 
-                            className="w-full border border-gray-300 p-2 rounded-lg bg-slate-50 font-bold text-gray-700 focus:ring-primary"
+                            className="w-full border border-gray-300 p-2 rounded-lg bg-slate-50 font-bold text-gray-700 focus:ring-primary text-sm"
                             value={selectedMonth}
                             onChange={e => setSelectedMonth(e.target.value)}
                             disabled={!selectedYear}
@@ -1157,7 +1149,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                             ))}
                         </select>
                     </div>
-                    <div>
+                    <div className="col-span-2 md:col-span-1">
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cari Pasien</label>
                         <div className="relative">
                             <Search className="absolute left-2.5 top-2.5 text-gray-400" size={14} />
@@ -1170,18 +1162,14 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                         </div>
                     </div>
                 </div>
-                
-                <div className="mt-auto pt-4 text-xs text-center text-gray-400 border-t border-gray-100 hidden md:block">
-                    Pilih filter untuk menampilkan data
-                </div>
             </div>
 
             {/* Right Content Area */}
-            <div className="flex-1 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col">
-                <div className="bg-slate-50 p-4 border-b border-gray-200 flex justify-between items-center">
-                    <h3 className="font-bold text-gray-700 flex items-center gap-2"><FileText size={18}/> Data Rekam Medis</h3>
-                    <div className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-                        {selectedYear} {selectedMonth ? ` - ${new Date(2000, parseInt(selectedMonth)-1, 1).toLocaleDateString('id-ID', { month: 'long' })}` : ''}
+            <div className="flex-1 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-full">
+                <div className="bg-slate-50 p-4 border-b border-gray-200 flex justify-between items-center shrink-0">
+                    <h3 className="font-bold text-gray-700 flex items-center gap-2 text-sm md:text-base"><FileText size={18}/> Data Rekam Medis</h3>
+                    <div className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20 whitespace-nowrap">
+                        {selectedYear} {selectedMonth ? ` - ${new Date(2000, parseInt(selectedMonth)-1, 1).toLocaleDateString('id-ID', { month: 'short' })}` : ''}
                     </div>
                 </div>
                 
@@ -1190,7 +1178,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                     {(!selectedYear || !groupedPatients || !groupedPatients[selectedYear]) ? (
                         <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2 opacity-50">
                             <Folder size={48} />
-                            <p>Silahkan pilih Tahun dan Bulan di panel kiri</p>
+                            <p className="text-sm">Silahkan pilih Tahun dan Bulan di panel filter</p>
                         </div>
                     ) : (
                         Object.keys(groupedPatients[selectedYear]).filter(m => !selectedMonth || m === selectedMonth).map(month => {
@@ -1202,7 +1190,7 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
 
                                 return (
                                     <div key={`${month}-${actId}`} className="border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition bg-white">
-                                        <div className="bg-slate-100 p-3 flex justify-between items-center border-b border-slate-200">
+                                        <div className="bg-slate-100 p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 gap-2">
                                             <div>
                                                 <h4 className="font-bold text-gray-800 text-sm">{act?.name}</h4>
                                                 <p className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
@@ -1211,25 +1199,25 @@ export const ManagePatients = ({ mode = 'edit' }: { mode: 'edit' | 'record' | 'a
                                                     <User size={12}/> {act?.host}
                                                 </p>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                                                 <span className="text-xs font-bold bg-white px-2 py-1 rounded border border-slate-200 text-slate-600">{pts.length} Pasien</span>
                                                 <button 
                                                     onClick={() => setPrintListActivity({ activity: act, patients: pts })} 
                                                     className="flex items-center gap-1 text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1.5 rounded hover:bg-blue-200 transition"
                                                     title="Cetak Laporan Kegiatan"
                                                 >
-                                                    <Printer size={14}/> Cetak Laporan
+                                                    <Printer size={14}/> Cetak
                                                 </button>
                                             </div>
                                         </div>
                                         <div className="overflow-x-auto">
-                                            <table className="w-full text-left text-sm border-collapse">
+                                            <table className="w-full text-left text-sm border-collapse min-w-[500px]">
                                                 <thead>
                                                     <tr>
-                                                        <th className="p-3 text-xs uppercase font-bold text-gray-500 bg-white border-b border-slate-100">MRN</th>
+                                                        <th className="p-3 text-xs uppercase font-bold text-gray-500 bg-white border-b border-slate-100 w-24">MRN</th>
                                                         <th className="p-3 text-xs uppercase font-bold text-gray-500 bg-white border-b border-slate-100">Nama Pasien</th>
-                                                        <th className="p-3 text-xs uppercase font-bold text-gray-500 bg-white border-b border-slate-100 text-center">Jenis</th>
-                                                        <th className="p-3 text-xs uppercase font-bold text-gray-500 bg-white border-b border-slate-100 text-center">Aksi</th>
+                                                        <th className="p-3 text-xs uppercase font-bold text-gray-500 bg-white border-b border-slate-100 text-center w-24">Jenis</th>
+                                                        <th className="p-3 text-xs uppercase font-bold text-gray-500 bg-white border-b border-slate-100 text-center w-20">Aksi</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-50">

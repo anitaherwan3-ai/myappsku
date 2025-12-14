@@ -6,18 +6,20 @@ const router = express.Router();
 
 // --- NEWS ---
 router.get('/news', async (req, res) => {
-  const db = getDB();
-  const news = await db.all('SELECT * FROM news ORDER BY date DESC');
-  res.json(news);
+  try {
+      const db = getDB();
+      const [rows] = await db.query('SELECT * FROM news ORDER BY date DESC');
+      res.json(rows);
+  } catch(err) { res.status(500).json({error: err.message}); }
 });
 
 router.post('/news', authenticate, async (req, res) => {
-  const db = getDB();
   const { id, title, date, content, imageUrl } = req.body;
   try {
-    await db.run(
-      'INSERT INTO news (id, title, date, content, imageUrl) VALUES (?,?,?,?,?)',
-      [id, title, date, content, imageUrl]
+    const db = getDB();
+    await db.query(
+        'INSERT INTO news (id, title, date, content, imageUrl) VALUES (?, ?, ?, ?, ?)',
+        [id, title, date, content, imageUrl]
     );
     res.status(201).json({ message: 'News created' });
   } catch (err) {
@@ -26,12 +28,12 @@ router.post('/news', authenticate, async (req, res) => {
 });
 
 router.put('/news/:id', authenticate, async (req, res) => {
-  const db = getDB();
   const { title, date, content, imageUrl } = req.body;
   try {
-    await db.run(
-      'UPDATE news SET title=?, date=?, content=?, imageUrl=? WHERE id=?',
-      [title, date, content, imageUrl, req.params.id]
+    const db = getDB();
+    await db.query(
+        'UPDATE news SET title=?, date=?, content=?, imageUrl=? WHERE id=?',
+        [title, date, content, imageUrl, req.params.id]
     );
     res.json({ message: 'News updated' });
   } catch (err) {
@@ -40,25 +42,31 @@ router.put('/news/:id', authenticate, async (req, res) => {
 });
 
 router.delete('/news/:id', authenticate, async (req, res) => {
-  const db = getDB();
-  await db.run('DELETE FROM news WHERE id = ?', [req.params.id]);
-  res.json({ message: 'News deleted' });
+  try {
+    const db = getDB();
+    await db.query('DELETE FROM news WHERE id=?', [req.params.id]);
+    res.json({ message: 'News deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // --- CAROUSEL ---
 router.get('/carousel', async (req, res) => {
-  const db = getDB();
-  const items = await db.all('SELECT * FROM carousel');
-  res.json(items);
+  try {
+    const db = getDB();
+    const [rows] = await db.query('SELECT * FROM carousel');
+    res.json(rows);
+  } catch(err) { res.status(500).json({error: err.message}); }
 });
 
 router.post('/carousel', authenticate, async (req, res) => {
-  const db = getDB();
   const { id, imageUrl, title, subtitle } = req.body;
   try {
-    await db.run(
-      'INSERT INTO carousel (id, imageUrl, title, subtitle) VALUES (?,?,?,?)',
-      [id, imageUrl, title, subtitle]
+    const db = getDB();
+    await db.query(
+        'INSERT INTO carousel (id, imageUrl, title, subtitle) VALUES (?, ?, ?, ?)',
+        [id, imageUrl, title, subtitle]
     );
     res.status(201).json({ message: 'Carousel item created' });
   } catch (err) {
@@ -67,9 +75,13 @@ router.post('/carousel', authenticate, async (req, res) => {
 });
 
 router.delete('/carousel/:id', authenticate, async (req, res) => {
-  const db = getDB();
-  await db.run('DELETE FROM carousel WHERE id = ?', [req.params.id]);
-  res.json({ message: 'Carousel item deleted' });
+  try {
+    const db = getDB();
+    await db.query('DELETE FROM carousel WHERE id=?', [req.params.id]);
+    res.json({ message: 'Carousel item deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
