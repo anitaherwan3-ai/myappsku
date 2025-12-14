@@ -1,12 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, ErrorInfo, ReactNode } from 'react';
 import { HashRouter, Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import LandingPage from './components/LandingPage';
 import DashboardLayout from './components/DashboardLayout';
 import DashboardSummary from './components/DashboardSummary';
-import NewsDetail from './components/NewsDetail'; // Import NewsDetail
-import DailyLog from './components/DailyLog'; // Import DailyLog
+import NewsDetail from './components/NewsDetail';
+import DailyLog from './components/DailyLog';
 import { useApp } from './context';
 import { ManageActivities, ManageOfficers, ManageNews, ManagePatients, ManageICD10, ManageCarousel } from './components/DashboardViews';
+
+// --- ERROR BOUNDARY (PENTING UNTUK DEBUGGING BLANK SCREEN) ---
+interface ErrorBoundaryProps {
+  children?: ReactNode;
+}
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = {
+    hasError: false,
+    error: null
+  };
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6 font-sans">
+          <div className="bg-white p-8 rounded-xl shadow-xl max-w-2xl w-full border border-red-100">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">Terjadi Kesalahan Aplikasi (Client Error)</h1>
+            <p className="text-gray-600 mb-4">Aplikasi mengalami crash. Silakan refresh halaman atau hubungi administrator.</p>
+            <div className="bg-slate-900 text-slate-50 p-4 rounded-lg overflow-auto text-xs font-mono mb-6">
+              {this.state.error?.toString()}
+            </div>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-secondary transition"
+            >
+              Refresh Halaman
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Login Page Component (Internal)
 const Login = () => {
@@ -77,32 +124,34 @@ const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode
 
 const App = () => {
   return (
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/news/:id" element={<NewsDetail />} />
-        <Route path="/login" element={<Login />} />
-        
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-            <Route index element={<DashboardSummary />} />
-            
-            {/* New Routes */}
-            <Route path="logs" element={<DailyLog />} />
-            <Route path="icd10" element={<ManageICD10 />} />
-            
-            {/* Admin Only */}
-            <Route path="activities" element={<ProtectedRoute allowedRoles={['admin']}><ManageActivities /></ProtectedRoute>} />
-            <Route path="officers" element={<ProtectedRoute allowedRoles={['admin']}><ManageOfficers /></ProtectedRoute>} />
-            <Route path="news" element={<ProtectedRoute allowedRoles={['admin']}><ManageNews /></ProtectedRoute>} />
-            <Route path="carousel" element={<ProtectedRoute allowedRoles={['admin']}><ManageCarousel /></ProtectedRoute>} />
+    <ErrorBoundary>
+      <HashRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/news/:id" element={<NewsDetail />} />
+          <Route path="/login" element={<Login />} />
+          
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+              <Route index element={<DashboardSummary />} />
+              
+              {/* New Routes */}
+              <Route path="logs" element={<DailyLog />} />
+              <Route path="icd10" element={<ManageICD10 />} />
+              
+              {/* Admin Only */}
+              <Route path="activities" element={<ProtectedRoute allowedRoles={['admin']}><ManageActivities /></ProtectedRoute>} />
+              <Route path="officers" element={<ProtectedRoute allowedRoles={['admin']}><ManageOfficers /></ProtectedRoute>} />
+              <Route path="news" element={<ProtectedRoute allowedRoles={['admin']}><ManageNews /></ProtectedRoute>} />
+              <Route path="carousel" element={<ProtectedRoute allowedRoles={['admin']}><ManageCarousel /></ProtectedRoute>} />
 
-            {/* Shared */}
-            <Route path="patients" element={<ManagePatients mode="edit" />} />
-            <Route path="patients/add" element={<ManagePatients mode="add" />} />
-            <Route path="medical-records" element={<ManagePatients mode="record" />} />
-        </Route>
-      </Routes>
-    </HashRouter>
+              {/* Shared */}
+              <Route path="patients" element={<ManagePatients mode="edit" />} />
+              <Route path="patients/add" element={<ManagePatients mode="add" />} />
+              <Route path="medical-records" element={<ManagePatients mode="record" />} />
+          </Route>
+        </Routes>
+      </HashRouter>
+    </ErrorBoundary>
   );
 };
 

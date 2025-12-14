@@ -1,10 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { AppState, Officer, Activity, News, Patient, ICD10, CarouselItem, OfficerLog } from './types';
 
-// API Configuration
+// --- KONFIGURASI DEPLOYMENT (PENTING) ---
+// Karena Shared Hosting Anda tidak support Node.js, Backend harus di-hosting terpisah 
+// (misal: di Render.com, Railway.app, atau Glitch).
+// Ganti URL di bawah ini dengan URL Backend Live Anda nanti.
+const REMOTE_BACKEND_URL = 'https://ganti-dengan-url-backend-anda.onrender.com';
+
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-// Backend Node.js berjalan di port 5000 secara default
-const API_URL = isLocal ? 'http://localhost:5000/api' : '/api';
+
+// Jika di localhost, tembak port 5000. Jika online, tembak URL Backend Remote.
+const API_URL = isLocal ? 'http://localhost:5000/api' : `${REMOTE_BACKEND_URL}/api`;
 
 // --- MOCK DATA FOR OFFLINE MODE ---
 const MOCK_ACTIVITIES: Activity[] = [
@@ -89,7 +95,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Fast check
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000); 
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout for remote backend
       try {
           // Check connection to activities endpoint
           await fetch(`${API_URL}/activities`, { method: 'HEAD', signal: controller.signal });
@@ -109,7 +115,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setNews(await resNews.json());
       setCarouselItems(await resCarousel.json());
     } catch (error) {
-      console.warn("Mode Offline Aktif: Tidak bisa terhubung ke backend MySQL.");
+      console.warn("Mode Offline Aktif: Tidak bisa terhubung ke backend.", error);
       setIsOffline(true);
       setActivities(loadLocal('pcc_activities', MOCK_ACTIVITIES));
       setNews(loadLocal('pcc_news', MOCK_NEWS));
