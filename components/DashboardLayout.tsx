@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useApp } from '../context';
-import { LayoutDashboard, Calendar, Users, FileText, LogOut, FilePlus, Database, Image as ImageIcon, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, FileText, LogOut, FilePlus, Database, Image as ImageIcon, Menu, X, ClipboardCheck } from 'lucide-react';
 
 const DashboardLayout = () => {
   const { user, logout } = useApp();
@@ -58,6 +58,12 @@ const DashboardLayout = () => {
             <LayoutDashboard size={20} /> Dashboard
           </NavLink>
 
+          <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Aktivitas</div>
+          
+          <NavLink to="/dashboard/logs" className={linkClass} onClick={() => setIsSidebarOpen(false)}>
+             <ClipboardCheck size={20} /> Laporan Harian
+          </NavLink>
+
           <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pasien & Medis</div>
           
           <NavLink to="/dashboard/patients/add" className={linkClass} onClick={() => setIsSidebarOpen(false)}>
@@ -106,7 +112,7 @@ const DashboardLayout = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden w-full relative">
          {/* Mobile Header */}
-         <div className="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20 shadow-sm shrink-0">
+         <div className="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20 shadow-sm shrink-0 print:hidden">
             <div className="flex items-center gap-3">
                 <button onClick={() => setIsSidebarOpen(true)} className="text-slate-600 p-1 active:bg-slate-100 rounded">
                   <Menu size={24} />
@@ -118,8 +124,8 @@ const DashboardLayout = () => {
             </div>
          </div>
 
-         <div className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-50 p-4 md:p-8 print:p-0 print:overflow-visible custom-scrollbar">
-            <div className="max-w-7xl mx-auto min-h-full">
+         <div className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-50 p-4 md:p-8 print:p-0 print:overflow-visible custom-scrollbar print:bg-white">
+            <div className="max-w-7xl mx-auto min-h-full print:max-w-none print:w-full">
                 <Outlet />
             </div>
          </div>

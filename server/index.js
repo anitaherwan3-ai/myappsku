@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs'); // Tambahkan fs
 const { initDB } = require('./db');
 
 // Import Routes
@@ -10,6 +11,7 @@ const patientRoutes = require('./routes/patients');
 const officerRoutes = require('./routes/officers');
 const contentRoutes = require('./routes/content');
 const icd10Routes = require('./routes/icd10');
+const logRoutes = require('./routes/logs'); // New Route
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,21 +30,40 @@ initDB().then(() => {
   app.use('/api/officers', officerRoutes);
   app.use('/api/content', contentRoutes);
   app.use('/api/icd10', icd10Routes);
+  app.use('/api/logs', logRoutes); // Register logs
 
   // SERVE FRONTEND (Production Mode)
-  // Assumes the frontend build is in a folder named 'dist' or 'build' one level up
-  // or inside the server folder. Adjust path as necessary for your deployment.
-  // For this example, we assume standard Vite build output to '../dist'
   const distPath = path.join(__dirname, '../dist');
-  app.use(express.static(distPath));
 
-  // Catch-all route to serve index.html for Client-Side Routing
+  // Hanya serve static files jika folder dist ada
+  if (fs.existsSync(distPath)) {
+    app.use(express.static(distPath));
+  }
+
+  // Catch-all route
   app.get('*', (req, res) => {
-    // If requesting API that doesn't exist, return 404
+    // Jika request API tapi salah endpoint
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: 'API Endpoint Not Found' });
     }
-    res.sendFile(path.join(distPath, 'index.html'));
+    
+    // Cek apakah index.html ada
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      // Fallback message jika mode development atau belum build
+      res.send(`
+        <div style="font-family: sans-serif; padding: 20px; text-align: center;">
+          <h1>Server Backend Berjalan (Port ${PORT})</h1>
+          <p>Error: Folder <code>dist</code> tidak ditemukan.</p>
+          <hr/>
+          <h3>Cara Menjalankan Aplikasi:</h3>
+          <p><strong>Mode Development (Disarankan):</strong> Buka terminal baru, jalankan <code>npm run dev</code> di folder root (bukan folder server).</p>
+          <p><strong>Mode Production:</strong> Jalankan <code>npm run build</code> di folder root untuk membuat folder dist.</p>
+        </div>
+      `);
+    }
   });
 
   app.listen(PORT, () => {

@@ -22,6 +22,18 @@ export interface Officer {
   role: Role;
 }
 
+export interface OfficerLog {
+  id: string;
+  officerId: string;
+  officerName?: string; // Filled via join/logic
+  teamId?: string; // Filled via join
+  date: string;
+  startTime: string;
+  endTime: string;
+  activity: string;
+  location: string;
+}
+
 export interface News {
   id: string;
   title: string;
@@ -124,4 +136,5 @@ export interface AppState {
   patients: Patient[];
   icd10List: ICD10[];
   carouselItems: CarouselItem[];
+  logs: OfficerLog[];
 }

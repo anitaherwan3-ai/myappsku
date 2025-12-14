@@ -1,13 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { AppState, Officer, Activity, News, Patient, ICD10, CarouselItem } from './types';
+import { AppState, Officer, Activity, News, Patient, ICD10, CarouselItem, OfficerLog } from './types';
 
 // API Configuration
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-// Jika Anda menjalankan PHP dengan: php -S localhost:8000 -t api
-// Maka URL: http://localhost:8000
-// Jika Anda menjalankan PHP dengan: php -S localhost:8000 (dari root)
-// Maka URL: http://localhost:8000/api
-const API_URL = isLocal ? 'http://localhost:8000/api' : '/api';
+// Backend Node.js berjalan di port 5000 secara default
+const API_URL = isLocal ? 'http://localhost:5000/api' : '/api';
 
 // --- MOCK DATA FOR OFFLINE MODE ---
 const MOCK_ACTIVITIES: Activity[] = [
@@ -51,6 +48,9 @@ interface AppContextType extends AppState {
   deleteICD10: (code: string) => Promise<void>;
   addCarousel: (c: CarouselItem) => Promise<void>;
   deleteCarousel: (id: string) => Promise<void>;
+  addLog: (l: OfficerLog) => Promise<void>;
+  updateLog: (l: OfficerLog) => Promise<void>;
+  deleteLog: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -75,6 +75,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [icd10List, setIcd10List] = useState<ICD10[]>([]);
   const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
+  const [logs, setLogs] = useState<OfficerLog[]>([]);
   const [isOffline, setIsOffline] = useState(false);
 
   // Helper for Headers
@@ -90,6 +91,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000); 
       try {
+          // Check connection to activities endpoint
           await fetch(`${API_URL}/activities`, { method: 'HEAD', signal: controller.signal });
           clearTimeout(timeoutId);
           setIsOffline(false);
@@ -107,7 +109,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setNews(await resNews.json());
       setCarouselItems(await resCarousel.json());
     } catch (error) {
-      console.warn("Mode Offline Aktif: Tidak bisa terhubung ke backend.");
+      console.warn("Mode Offline Aktif: Tidak bisa terhubung ke backend MySQL.");
       setIsOffline(true);
       setActivities(loadLocal('pcc_activities', MOCK_ACTIVITIES));
       setNews(loadLocal('pcc_news', MOCK_NEWS));
@@ -122,26 +124,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setPatients(loadLocal('pcc_patients', []));
         setOfficers(loadLocal('pcc_officers', MOCK_OFFICERS));
         setIcd10List(loadLocal('pcc_icd10', []));
+        setLogs(loadLocal('pcc_logs', []));
         return;
     }
 
     try {
       const headers = getHeaders();
-      const [resPat, resOff, resIcd] = await Promise.all([
+      const [resPat, resOff, resIcd, resLogs] = await Promise.all([
         fetch(`${API_URL}/patients`, { headers }),
         fetch(`${API_URL}/officers`, { headers }),
-        fetch(`${API_URL}/icd10`, { headers })
+        fetch(`${API_URL}/icd10`, { headers }),
+        fetch(`${API_URL}/logs`, { headers })
       ]);
       
       if(resPat.ok) setPatients(await resPat.json());
       if(resOff.ok) setOfficers(await resOff.json());
       if(resIcd.ok) setIcd10List(await resIcd.json());
+      if(resLogs.ok) setLogs(await resLogs.json());
     } catch (error) {
       console.warn("Gagal mengambil data terlindungi, beralih ke data lokal.");
       setIsOffline(true);
       setPatients(loadLocal('pcc_patients', []));
       setOfficers(loadLocal('pcc_officers', MOCK_OFFICERS));
       setIcd10List(loadLocal('pcc_icd10', []));
+      setLogs(loadLocal('pcc_logs', []));
     }
   }, [token, isOffline]);
 
@@ -221,6 +227,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('pcc_token');
     setPatients([]);
     setOfficers([]);
+    setLogs([]);
   };
 
   // Generic Helpers for CRUD with Offline Fallback
@@ -362,15 +369,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setIcd10List(updated);
   };
 
+  // Logs
+  const addLog = async (item: OfficerLog) => {
+    // Note: Backend automatically assigns officerId from token
+    await performAction('logs', 'POST', item, 'pcc_logs', (curr) => [...curr, item]);
+    if(isOffline) setLogs(prev => [...prev, item]); else fetchProtectedData();
+  };
+  const updateLog = async (item: OfficerLog) => {
+    await performAction('logs', 'PUT', item, 'pcc_logs', (curr) => curr.map((x:OfficerLog) => x.id === item.id ? item : x));
+    if(isOffline) setLogs(prev => prev.map(x => x.id === item.id ? item : x)); else fetchProtectedData();
+  };
+  const deleteLog = async (id: string) => {
+    await performAction('logs', 'DELETE', id, 'pcc_logs', (curr) => curr.filter((x:OfficerLog) => x.id !== id));
+    if(isOffline) setLogs(prev => prev.filter(x => x.id !== id)); else fetchProtectedData();
+  };
+
   return (
     <AppContext.Provider value={{
-      user, activities, officers, news, patients, icd10List, carouselItems,
+      user, activities, officers, news, patients, icd10List, carouselItems, logs,
       login, logout,
       addActivity, updateActivity, deleteActivity,
       addPatient, updatePatient, deletePatient,
       addOfficer, updateOfficer, deleteOfficer,
       addNews, updateNews, deleteNews,
-      addICD10, updateICD10, deleteICD10, addCarousel, deleteCarousel
+      addICD10, updateICD10, deleteICD10, addCarousel, deleteCarousel,
+      addLog, updateLog, deleteLog
     }}>
       {children}
     </AppContext.Provider>

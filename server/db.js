@@ -62,6 +62,17 @@ async function createTables() {
       status VARCHAR(20) DEFAULT 'To Do'
     );
 
+    CREATE TABLE IF NOT EXISTS officer_logs (
+      id VARCHAR(50) PRIMARY KEY,
+      officerId VARCHAR(50) NOT NULL,
+      date DATE NOT NULL,
+      startTime VARCHAR(10),
+      endTime VARCHAR(10),
+      activity TEXT,
+      location VARCHAR(255),
+      FOREIGN KEY (officerId) REFERENCES officers(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS icd10 (
       code VARCHAR(20) PRIMARY KEY,
       name TEXT

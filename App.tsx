@@ -4,6 +4,7 @@ import LandingPage from './components/LandingPage';
 import DashboardLayout from './components/DashboardLayout';
 import DashboardSummary from './components/DashboardSummary';
 import NewsDetail from './components/NewsDetail'; // Import NewsDetail
+import DailyLog from './components/DailyLog'; // Import DailyLog
 import { useApp } from './context';
 import { ManageActivities, ManageOfficers, ManageNews, ManagePatients, ManageICD10, ManageCarousel } from './components/DashboardViews';
 
@@ -86,6 +87,7 @@ const App = () => {
             <Route index element={<DashboardSummary />} />
             
             {/* New Routes */}
+            <Route path="logs" element={<DailyLog />} />
             <Route path="icd10" element={<ManageICD10 />} />
             
             {/* Admin Only */}
