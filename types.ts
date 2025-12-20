@@ -1,8 +1,6 @@
 
 export type Role = 'admin' | 'petugas';
-
 export type ActivityStatus = 'To Do' | 'On Progress' | 'Done';
-
 export type TriageLevel = 'Green' | 'Yellow' | 'Red';
 
 export interface Activity {
@@ -36,6 +34,7 @@ export interface OfficerLog {
   endTime: string;
   activity: string;
   location: string;
+  imageUrl?: string; 
 }
 
 export interface News {
@@ -59,19 +58,15 @@ export interface ICD10 {
 }
 
 export type PatientCategory = 'Berobat' | 'MCU';
+export type ReferralStatus = 'Rujuk' | 'Selesai';
 
 export interface Patient {
   id: string;
   mrn: string; 
   activityId: string; 
   name: string;
-  
-  // Audit Trail
   lastModifiedBy?: string;
   lastModifiedAt?: string;
-
-  // Identity
-  dateOfBirth?: string; 
   age: number; 
   gender: 'L' | 'P';
   address: string;
@@ -79,35 +74,21 @@ export interface Patient {
   identityNo: string; 
   visitDate: string;
   category: PatientCategory;
-  
-  // Geospatial
-  latitude?: number;
-  longitude?: number;
-
-  // Vital Signs
   triage: TriageLevel;
-  bloodType?: 'A' | 'B' | 'AB' | 'O';
-  allergies?: string;
+  isEmergency?: boolean; // Menandai situasi emergency
   height: number; 
   weight: number; 
   bloodPressure: string;
   pulse: number;
   respiration: number;
-  temperature: number; // Baru
+  temperature: number; 
   bmi: number; 
   bmiStatus: string; 
-
-  // Berobat (SOAP)
-  historyOfIllness?: string;
   subjective?: string; 
   physicalExam?: string;
   diagnosisCode?: string; 
   diagnosisName?: string; 
   therapy?: string;
-  referralStatus?: 'Rujuk' | 'Tidak Rujuk';
-  referralNotes?: string;
-
-  // MCU (Detailed)
   visusOD?: string; 
   visusOS?: string; 
   colorBlind?: string; 
@@ -118,7 +99,6 @@ export interface Patient {
   tonsil?: string;
   thorax?: string; 
   abdomen?: string;
-  varicocele?: string;
   hernia?: string;
   hemorrhoids?: string;
   varicose?: string; 
@@ -126,14 +106,8 @@ export interface Patient {
   reflexPupil?: string;
   reflexPatella?: string;
   reflexAchilles?: string;
-  
-  // Penunjang
-  ekgResult?: string;
-  xrayResult?: string;
-  labSummary?: string;
-  
   mcuConclusion?: string;
-  mcuRecommendation?: string;
+  referralStatus?: ReferralStatus;
 }
 
 export interface AppState {

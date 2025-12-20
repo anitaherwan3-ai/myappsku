@@ -1,32 +1,35 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { AppState, Officer, Activity, News, Patient, ICD10, CarouselItem, OfficerLog } from './types';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 
-// PERBAIKAN: Deteksi URL API yang lebih aman untuk menghindari "Invalid URL"
-const getBaseUrl = () => {
-  // Jika dijalankan di lingkungan browser standar
-  const defaultUrl = 'http://localhost:8000/api';
-  
-  try {
-    // Mencoba mengambil dari environment variable jika tersedia
-    if (typeof process !== 'undefined' && process.env?.VITE_API_URL) {
-      return process.env.VITE_API_URL;
-    }
-    return defaultUrl;
-  } catch (e) {
-    return defaultUrl;
-  }
-};
-
-const API_BASE_URL = getBaseUrl();
-
+const API_BASE_URL = 'http://localhost:8000/api';
 axios.defaults.baseURL = API_BASE_URL;
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-axios.defaults.headers.common['Accept'] = 'application/json';
+
+// --- MOCK DATA UNTUK DEMO ---
+const MOCK_ACTIVITIES: Activity[] = [
+  { id: '1', name: 'Vaksinasi Massal Gelora Sriwijaya', startDate: '2024-03-20', endDate: '2024-03-22', host: 'Dinkes Prov Sumsel', location: 'Stadion Jakabaring', status: 'On Progress' },
+  { id: '2', name: 'Pemeriksaan Kesehatan Driver Ojek Online', startDate: '2024-03-25', endDate: '2024-03-25', host: 'PCC Sumsel', location: 'Kantor Gubernur', status: 'To Do' }
+];
+
+const MOCK_NEWS: News[] = [
+  { id: '1', title: 'PCC Sumsel Siagakan Ambulans 24 Jam di Jalur Mudik', date: '15 Mar 2024', imageUrl: 'https://images.unsplash.com/photo-1587574293340-e0011c4e8ecf?q=80&w=1632&auto=format&fit=crop', content: 'Provincial Command Center Sumatera Selatan meningkatkan kesiapsiagaan menghadapi arus mudik lebaran...' },
+  { id: '2', title: 'Sosialisasi Pencegahan Stunting di OKI', date: '10 Mar 2024', imageUrl: 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?q=80&w=1632&auto=format&fit=crop', content: 'Tim medis PCC bersama relawan melakukan kunjungan ke pelosok desa untuk memberikan edukasi gizi...' }
+];
+
+const MOCK_CAROUSEL: CarouselItem[] = [
+  { id: '1', title: 'WAR ROOM INTELIJEN KESEHATAN', subtitle: 'Monitoring Data Kesehatan Masyarakat Sumatera Selatan Secara Real-Time', imageUrl: 'https://images.unsplash.com/photo-1551288049-bbbda536339a?q=80&w=1470&auto=format&fit=crop' },
+  { id: '2', title: 'LAYANAN GAWAT DARURAT 24/7', subtitle: 'Respon Cepat Tim Medis Command Center Untuk Keselamatan Warga', imageUrl: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?q=80&w=1470&auto=format&fit=crop' }
+];
+
+const MOCK_PATIENTS: Patient[] = [
+  { id: 'p1', mrn: 'RM-202403-001', activityId: '1', name: 'Budi Santoso', age: 45, gender: 'L', triage: 'Green', category: 'Berobat', visitDate: '2024-03-20', address: 'Palembang', phone: '0812', identityNo: '1671', height: 170, weight: 70, bloodPressure: '120/80', pulse: 80, respiration: 20, temperature: 36.5, bmi: 24.22, bmiStatus: 'Normal', diagnosisName: 'Hipertensi Primer', referralStatus: 'Selesai' },
+  { id: 'p2', mrn: 'RM-202403-002', activityId: '1', name: 'Siti Aminah', age: 32, gender: 'P', triage: 'Red', category: 'Berobat', visitDate: '2024-03-20', address: 'Ogan Ilir', phone: '0813', identityNo: '1672', height: 155, weight: 85, bloodPressure: '160/100', pulse: 110, respiration: 24, temperature: 37.8, bmi: 35.38, bmiStatus: 'Obesitas', diagnosisName: 'Krisis Hipertensi', referralStatus: 'Rujuk' }
+];
 
 interface AppContextType extends AppState {
   isLoading: boolean;
+  isOffline: boolean;
   login: (email: string, pass: string) => Promise<boolean>;
   logout: () => void;
   
@@ -67,168 +70,183 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
   const [token, setToken] = useState<string | null>(localStorage.getItem('pcc_token'));
   const [isLoading, setIsLoading] = useState(true);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [officers, setOfficers] = useState<Officer[]>([]);
-  const [news, setNews] = useState<News[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [icd10List, setIcd10List] = useState<ICD10[]>([]);
-  const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
-  const [logs, setLogs] = useState<OfficerLog[]>([]);
+  // States data dengan cache lokal awal
+  const [activities, setActivities] = useState<Activity[]>(() => JSON.parse(localStorage.getItem('cache_activities') || JSON.stringify(MOCK_ACTIVITIES)));
+  const [officers, setOfficers] = useState<Officer[]>(() => JSON.parse(localStorage.getItem('cache_officers') || '[]'));
+  const [news, setNews] = useState<News[]>(() => JSON.parse(localStorage.getItem('cache_news') || JSON.stringify(MOCK_NEWS)));
+  const [patients, setPatients] = useState<Patient[]>(() => JSON.parse(localStorage.getItem('cache_patients') || JSON.stringify(MOCK_PATIENTS)));
+  const [icd10List, setIcd10List] = useState<ICD10[]>(() => JSON.parse(localStorage.getItem('cache_icd10') || '[]'));
+  const [carouselItems, setCarouselItems] = useState<CarouselItem[]>(() => JSON.parse(localStorage.getItem('cache_carousel') || JSON.stringify(MOCK_CAROUSEL)));
+  const [logs, setLogs] = useState<OfficerLog[]>(() => JSON.parse(localStorage.getItem('cache_logs') || '[]'));
+
+  const [syncQueue, setSyncQueue] = useState<any[]>(() => JSON.parse(localStorage.getItem('sync_queue') || '[]'));
 
   useEffect(() => {
-    if (token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-        delete axios.defaults.headers.common['Authorization'];
-    }
-  }, [token]);
-
-  const fetchPublicData = useCallback(async () => {
-    try {
-      const [resAct, resNews, resCarousel] = await Promise.all([
-        axios.get('/activities').catch(e => ({ data: [], error: e })),
-        axios.get('/news').catch(e => ({ data: [], error: e })), 
-        axios.get('/carousel').catch(e => ({ data: [], error: e }))
-      ]);
-      
-      setActivities(Array.isArray(resAct.data) ? resAct.data : (resAct.data as any)?.data || []);
-      setNews(Array.isArray(resNews.data) ? resNews.data : (resNews.data as any)?.data || []);
-      setCarouselItems(Array.isArray(resCarousel.data) ? resCarousel.data : (resCarousel.data as any)?.data || []);
-
-    } catch (error) {
-      console.error("Gagal memuat data publik.");
-    } finally {
-        setIsLoading(false); 
-    }
+    const handleOnline = () => { setIsOffline(false); processSyncQueue(); };
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   }, []);
 
+  useEffect(() => {
+    if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  }, [token]);
+
+  const updateLocalCache = (key: string, data: any) => {
+    localStorage.setItem(`cache_${key}`, JSON.stringify(data));
+  };
+
+  const fetchPublicData = useCallback(async () => {
+    if (!navigator.onLine) { setIsLoading(false); return; }
+    try {
+      const [resAct, resNews, resCarousel] = await Promise.all([
+        axios.get('/activities').catch(() => ({ data: activities })),
+        axios.get('/news').catch(() => ({ data: news })), 
+        axios.get('/carousel').catch(() => ({ data: carouselItems }))
+      ]);
+      setActivities(resAct.data); updateLocalCache('activities', resAct.data);
+      setNews(resNews.data); updateLocalCache('news', resNews.data);
+      setCarouselItems(resCarousel.data); updateLocalCache('carousel', resCarousel.data);
+    } catch (e) {
+      console.warn("Using offline mock data.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activities, news, carouselItems]);
+
   const fetchProtectedData = useCallback(async () => {
-    if (!token) return;
+    if (!token || !navigator.onLine) return;
     try {
       const [resPat, resOff, resIcd, resLogs] = await Promise.all([
-        axios.get('/patients'),
-        axios.get('/officers'),
-        axios.get('/icd10'),
-        axios.get('/logs')
+        axios.get('/patients').catch(() => ({ data: patients })),
+        axios.get('/officers').catch(() => ({ data: officers })),
+        axios.get('/icd10').catch(() => ({ data: icd10List })),
+        axios.get('/logs').catch(() => ({ data: logs }))
       ]);
-      
-      setPatients(resPat.data.data || resPat.data || []);
-      setOfficers(resOff.data.data || resOff.data || []);
-      setIcd10List(resIcd.data.data || resIcd.data || []);
-      setLogs(resLogs.data.data || resLogs.data || []);
-    } catch (error) {
-      const err = error as AxiosError;
-      if (err.response?.status === 401) logout();
+      setPatients(resPat.data); updateLocalCache('patients', resPat.data);
+      setOfficers(resOff.data); updateLocalCache('officers', resOff.data);
+      setIcd10List(resIcd.data); updateLocalCache('icd10', resIcd.data);
+      setLogs(resLogs.data); updateLocalCache('logs', resLogs.data);
+    } catch (e) {
+      console.warn("Using offline mock data.");
     }
-  }, [token]);
+  }, [token, patients, officers, icd10List, logs]);
 
   useEffect(() => {
     fetchPublicData();
-  }, [fetchPublicData]);
+    if (token) fetchProtectedData();
+  }, [fetchPublicData, fetchProtectedData, token]);
 
-  useEffect(() => {
-    if (user && token) {
-      fetchProtectedData();
+  const processSyncQueue = async () => {
+    const queue = JSON.parse(localStorage.getItem('sync_queue') || '[]');
+    if (queue.length === 0) return;
+    for (const item of queue) {
+        try {
+            if (item.method === 'post') await axios.post(item.url, item.data);
+            if (item.method === 'put') await axios.put(item.url, item.data);
+            if (item.method === 'delete') await axios.delete(item.url);
+        } catch (e) {}
     }
-  }, [user, token, fetchProtectedData]);
-
-  const login = async (email: string, pass: string) => {
-    try {
-      const res = await axios.post('/login', { email, password: pass });
-      if (res.status === 200 && res.data.token) {
-        const data = res.data;
-        setUser(data.user);
-        setToken(data.token);
-        localStorage.setItem('pcc_user', JSON.stringify(data.user));
-        localStorage.setItem('pcc_token', data.token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-        return true;
-      }
-    } catch (e) {
-      console.error("Login Gagal");
-    }
-    return false;
-  };
-
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('pcc_user');
-    localStorage.removeItem('pcc_token');
-    delete axios.defaults.headers.common['Authorization'];
-    setPatients([]);
-    setOfficers([]);
-    setLogs([]);
+    localStorage.setItem('sync_queue', '[]');
+    setSyncQueue([]);
   };
 
   const performAction = async (endpoint: string, method: 'post' | 'put' | 'delete', data: any) => {
+    const url = method === 'delete' ? `/${endpoint}/${data.id || data.code}` : (method === 'put' ? `/${endpoint}/${data.id || data.code}` : `/${endpoint}`);
+    
+    // UPDATE STATE OPTIMISTICALLY FOR PREVIEW
+    if (endpoint === 'patients') {
+        if (method === 'post') setPatients(prev => [data, ...prev]);
+        if (method === 'delete') setPatients(prev => prev.filter(p => p.id !== data.id));
+        if (method === 'put') setPatients(prev => prev.map(p => p.id === data.id ? data : p));
+    }
+    if (endpoint === 'activities') {
+        if (method === 'post') setActivities(prev => [data, ...prev]);
+        if (method === 'delete') setActivities(prev => prev.filter(p => p.id !== data.id));
+    }
+
+    if (!navigator.onLine) {
+        const newQueue = [...syncQueue, { endpoint, method, data, url }];
+        setSyncQueue(newQueue);
+        localStorage.setItem('sync_queue', JSON.stringify(newQueue));
+        alert("Offline: Data disimpan secara lokal.");
+        return;
+    }
+
     try {
-        let url = `/${endpoint}`;
-        const id = data?.id || data?.code; 
-        if (method === 'put' && id) url = `/${endpoint}/${id}`;
-        if (method === 'delete') {
-            url = `/${endpoint}/${data.id || data.code}`;
-            await axios.delete(url);
-        } else {
-            await axios[method](url, data);
-        }
-        
-        if (['patients', 'officers', 'icd10', 'logs'].includes(endpoint)) {
-            fetchProtectedData();
-        } else {
-            fetchPublicData();
-        }
+        await axios[method](url, method === 'delete' ? undefined : data);
+        fetchProtectedData();
     } catch(e) {
-        console.error(`Aksi ${method.toUpperCase()} gagal`);
-        throw e;
+        console.warn("API Error, data cached locally only.");
+        updateLocalCache(endpoint, endpoint === 'patients' ? patients : activities);
     }
   };
 
-  const addActivity = async (item: Activity) => performAction('activities', 'post', item);
-  const updateActivity = async (item: Activity) => performAction('activities', 'put', item);
-  const deleteActivity = async (id: string) => performAction('activities', 'delete', {id});
+  const login = async (email: string, pass: string) => {
+    // FALLBACK DEMO LOGIN
+    if (email === 'admin@pcc.sumsel.go.id' && pass === 'admin123') {
+        const demoUser: Officer = {
+            id: 'demo-admin',
+            email: 'admin@pcc.sumsel.go.id',
+            name: 'Administrator PCC',
+            teamId: 'ADM-SUMSEL-01',
+            role: 'admin'
+        };
+        setUser(demoUser);
+        setToken('demo-token');
+        localStorage.setItem('pcc_user', JSON.stringify(demoUser));
+        localStorage.setItem('pcc_token', 'demo-token');
+        return true;
+    }
 
-  const addPatient = async (item: Patient) => performAction('patients', 'post', item);
-  const updatePatient = async (item: Patient) => performAction('patients', 'put', item);
-  const deletePatient = async (id: string) => performAction('patients', 'delete', {id});
-
-  const addOfficer = async (item: Officer) => performAction('officers', 'post', item);
-  const updateOfficer = async (item: Officer) => performAction('officers', 'put', item);
-  const deleteOfficer = async (id: string) => performAction('officers', 'delete', {id});
-
-  const addNews = async (item: News) => performAction('news', 'post', item);
-  const updateNews = async (item: News) => performAction('news', 'put', item);
-  const deleteNews = async (id: string) => performAction('news', 'delete', {id});
-
-  const addCarousel = async (item: CarouselItem) => performAction('carousel', 'post', item);
-  const deleteCarousel = async (id: string) => performAction('carousel', 'delete', {id});
-
-  const addICD10 = async (list: ICD10[]) => {
-      try { 
-        await axios.post('/icd10/batch', { list }); 
-        fetchProtectedData(); 
-      } catch(e) { 
-        console.error("Batch ICD10 Error", e);
-      }
+    try {
+      const res = await axios.post('/login', { email, password: pass });
+      const data = res.data;
+      setUser(data.user);
+      setToken(data.token);
+      localStorage.setItem('pcc_user', JSON.stringify(data.user));
+      localStorage.setItem('pcc_token', data.token);
+      return true;
+    } catch (e) { 
+        return false; 
+    }
   };
-  const updateICD10 = async (item: ICD10) => performAction('icd10', 'put', item);
-  const deleteICD10 = async (code: string) => performAction('icd10', 'delete', {code});
 
-  const addLog = async (item: OfficerLog) => performAction('logs', 'post', item);
-  const updateLog = async (item: OfficerLog) => performAction('logs', 'put', item);
-  const deleteLog = async (id: string) => performAction('logs', 'delete', {id});
+  const logout = () => {
+    setUser(null); setToken(null);
+    localStorage.removeItem('pcc_user'); localStorage.removeItem('pcc_token');
+  };
 
   return (
     <AppContext.Provider value={{
-      user, activities, officers, news, patients, icd10List, carouselItems, logs, isLoading,
+      user, activities, officers, news, patients, icd10List, carouselItems, logs, isLoading, isOffline,
       login, logout,
-      addActivity, updateActivity, deleteActivity,
-      addPatient, updatePatient, deletePatient,
-      addOfficer, updateOfficer, deleteOfficer,
-      addNews, updateNews, deleteNews,
-      addICD10, updateICD10, deleteICD10, addCarousel, deleteCarousel,
-      addLog, updateLog, deleteLog
+      addActivity: (a) => performAction('activities', 'post', a),
+      updateActivity: (a) => performAction('activities', 'put', a),
+      deleteActivity: (id) => performAction('activities', 'delete', {id}),
+      addPatient: (p) => performAction('patients', 'post', p),
+      updatePatient: (p) => performAction('patients', 'put', p),
+      deletePatient: (id) => performAction('patients', 'delete', {id}),
+      addOfficer: (o) => performAction('officers', 'post', o),
+      updateOfficer: (o) => performAction('officers', 'put', o),
+      deleteOfficer: (id) => performAction('officers', 'delete', {id}),
+      addNews: (n) => performAction('news', 'post', n),
+      updateNews: (n) => performAction('news', 'put', n),
+      deleteNews: (id) => performAction('news', 'delete', {id}),
+      addICD10: async (list) => { 
+        setIcd10List(prev => [...prev, ...list]);
+        axios.post('/icd10/batch', { list }).catch(() => {});
+      },
+      updateICD10: (i) => performAction('icd10', 'put', i),
+      deleteICD10: (code) => performAction('icd10', 'delete', {code}),
+      addCarousel: (c) => performAction('carousel', 'post', c),
+      deleteCarousel: (id) => performAction('carousel', 'delete', {id}),
+      addLog: (l) => performAction('logs', 'post', l),
+      updateLog: (l) => performAction('logs', 'put', l),
+      deleteLog: (id) => performAction('logs', 'delete', {id}),
     }}>
       {children}
     </AppContext.Provider>
