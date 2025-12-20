@@ -1,56 +1,54 @@
 const express = require('express');
-const { getDB } = require('../db');
-const { authenticate } = require('../middleware');
-
 const router = express.Router();
+const { readDb, writeDb } = require('../db');
 
-router.get('/', async (req, res) => {
-  try {
-      const db = getDB();
-      const [rows] = await db.query('SELECT * FROM icd10 LIMIT 1000');
-      res.json(rows);
-  } catch (err) {
-      res.status(500).json({ error: err.message });
-  }
+router.get('/icd10', (req, res) => {
+    const db = readDb();
+    res.json(db.icd10 || []);
 });
 
-router.post('/', authenticate, async (req, res) => {
-  const items = Array.isArray(req.body) ? req.body : [req.body];
-  
-  try {
-    const db = getDB();
-    const values = items.map(item => [item.code, item.name]);
-    
-    // MySQL Bulk Insert with ON DUPLICATE KEY UPDATE
-    await db.query(
-        'INSERT INTO icd10 (code, name) VALUES ? ON DUPLICATE KEY UPDATE name=VALUES(name)',
-        [values]
-    );
-    
-    res.status(201).json({ message: `Imported/Updated ${items.length} ICD10 codes` });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+router.post('/icd10', (req, res) => {
+    const db = readDb();
+    const newItem = req.body;
+    // Avoid duplicates
+    if (!db.icd10.find(x => x.code === newItem.code)) {
+        db.icd10.push(newItem);
+        writeDb(db);
+    }
+    res.json(newItem);
 });
 
-router.put('/:code', authenticate, async (req, res) => {
-    try {
-        const db = getDB();
-        await db.query('UPDATE icd10 SET name=? WHERE code=?', [req.body.name, req.params.code]);
-        res.json({ message: 'Updated' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+router.post('/icd10/batch', (req, res) => {
+    const db = readDb();
+    const list = req.body.list || [];
+    let added = 0;
+    list.forEach(item => {
+        if (!db.icd10.find(x => x.code === item.code)) {
+            db.icd10.push(item);
+            added++;
+        }
+    });
+    if (added > 0) writeDb(db);
+    res.json({added});
+});
+
+router.put('/icd10/:code', (req, res) => {
+    const db = readDb();
+    const index = db.icd10.findIndex(x => x.code === req.params.code);
+    if (index !== -1) {
+        db.icd10[index] = { ...db.icd10[index], ...req.body };
+        writeDb(db);
+        res.json(db.icd10[index]);
+    } else {
+        res.status(404).json({message: 'Not found'});
     }
 });
 
-router.delete('/:code', authenticate, async (req, res) => {
-    try {
-        const db = getDB();
-        await db.query('DELETE FROM icd10 WHERE code=?', [req.params.code]);
-        res.json({ message: 'Deleted' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+router.delete('/icd10/:code', (req, res) => {
+    const db = readDb();
+    db.icd10 = db.icd10.filter(x => x.code !== req.params.code);
+    writeDb(db);
+    res.json({success: true});
 });
 
 module.exports = router;

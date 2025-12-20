@@ -3,6 +3,8 @@ export type Role = 'admin' | 'petugas';
 
 export type ActivityStatus = 'To Do' | 'On Progress' | 'Done';
 
+export type TriageLevel = 'Green' | 'Yellow' | 'Red';
+
 export interface Activity {
   id: string;
   name: string;
@@ -11,22 +13,24 @@ export interface Activity {
   host: string;
   location: string;
   status: ActivityStatus;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Officer {
-  id: string; // Internal UUID
-  email: string; // Login Credential
+  id: string; 
+  email: string; 
   name: string;
-  teamId: string; // Badge ID / NIP
-  password: string; // Plaintext for simulation
+  teamId: string; 
+  password?: string;
   role: Role;
 }
 
 export interface OfficerLog {
   id: string;
   officerId: string;
-  officerName?: string; // Filled via join/logic
-  teamId?: string; // Filled via join
+  officerName?: string;
+  teamId?: string;
   date: string;
   startTime: string;
   endTime: string;
@@ -38,8 +42,8 @@ export interface News {
   id: string;
   title: string;
   date: string;
-  content: string; // Keterangan Berita
-  imageUrl: string; // Dokumentasi
+  content: string; 
+  imageUrl: string; 
 }
 
 export interface CarouselItem {
@@ -58,72 +62,76 @@ export type PatientCategory = 'Berobat' | 'MCU';
 
 export interface Patient {
   id: string;
-  mrn: string; // Medical Record Number (Auto generated)
-  activityId: string; // Link to Activity
+  mrn: string; 
+  activityId: string; 
   name: string;
   
   // Audit Trail
   lastModifiedBy?: string;
   lastModifiedAt?: string;
 
-  // New Identity Fields
-  dateOfBirth?: string; // YYYY-MM-DD
-  age: number; // Calculated
+  // Identity
+  dateOfBirth?: string; 
+  age: number; 
   gender: 'L' | 'P';
   address: string;
   phone: string;
-  identityNo: string; // KTP/ID
+  identityNo: string; 
   visitDate: string;
   category: PatientCategory;
   
-  // Vitals (Common)
-  height: number; // cm
-  weight: number; // kg
+  // Geospatial
+  latitude?: number;
+  longitude?: number;
+
+  // Vital Signs
+  triage: TriageLevel;
+  bloodType?: 'A' | 'B' | 'AB' | 'O';
+  allergies?: string;
+  height: number; 
+  weight: number; 
   bloodPressure: string;
   pulse: number;
   respiration: number;
-  bmi: number; // Auto
-  bmiStatus: string; // Auto
-  historyOfIllness: string;
+  temperature: number; // Baru
+  bmi: number; 
+  bmiStatus: string; 
 
-  // Berobat Specific
-  subjective?: string; // Anamnesis
+  // Berobat (SOAP)
+  historyOfIllness?: string;
+  subjective?: string; 
   physicalExam?: string;
-  diagnosisCode?: string; // Link to ICD10 code
-  diagnosisName?: string; // Redundant but easier for display
+  diagnosisCode?: string; 
+  diagnosisName?: string; 
   therapy?: string;
   referralStatus?: 'Rujuk' | 'Tidak Rujuk';
+  referralNotes?: string;
 
-  // MCU Specific
-  visusOD?: string; // Mata Kanan
-  visusOS?: string; // Mata Kiri
-  colorBlind?: string; // Buta Warna
+  // MCU (Detailed)
+  visusOD?: string; 
+  visusOS?: string; 
+  colorBlind?: string; 
   rightEar?: string;
   leftEar?: string;
-  nose?: string; // Hidung
+  nose?: string; 
   teeth?: string;
   tonsil?: string;
-  
-  // MCU Internal
-  thorax?: string; // Jantung & Paru
+  thorax?: string; 
   abdomen?: string;
-
-  // MCU Surgical/Genital
   varicocele?: string;
   hernia?: string;
   hemorrhoids?: string;
-  
-  // MCU Extremities & Neuro
-  varicose?: string; // Varises
-  extremityDeformity?: string; // Deformitas Alat Gerak
+  varicose?: string; 
+  extremityDeformity?: string; 
   reflexPupil?: string;
   reflexPatella?: string;
   reflexAchilles?: string;
   
-  // MCU Supporting
+  // Penunjang
   ekgResult?: string;
   xrayResult?: string;
   labSummary?: string;
+  
   mcuConclusion?: string;
   mcuRecommendation?: string;
 }

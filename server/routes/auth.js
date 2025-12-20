@@ -1,33 +1,28 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { getDB } = require('../db');
-const { SECRET_KEY } = require('../middleware');
-
 const router = express.Router();
+const { readDb } = require('../db');
 
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const db = getDB();
-    const [rows] = await db.query('SELECT * FROM officers WHERE email = ?', [email]);
+router.post('/login', (req, res) => {
+    const { email, password } = req.body;
+    const db = readDb();
     
-    if (rows.length === 0) return res.status(400).json({ error: 'User tidak ditemukan.' });
-    
-    const user = rows[0];
-    const validPass = await bcrypt.compare(password, user.password);
-    if (!validPass) return res.status(400).json({ error: 'Password salah.' });
+    // Check main users (officers table) and initial admin
+    const user = db.users.find(u => u.email === email && u.password === password) || 
+                 db.officers.find(o => o.email === email && o.password === password);
 
-    // Create Token
-    const token = jwt.sign({ id: user.id, role: user.role, name: user.name }, SECRET_KEY, { expiresIn: '12h' });
+    if (user) {
+        // In real app, generate JWT here. We use a simple mock token.
+        res.json({
+            token: 'mock-token-' + user.id,
+            user: user
+        });
+    } else {
+        res.status(401).json({ message: 'Invalid credentials' });
+    }
+});
 
-    // Return user info
-    const { password: _, ...userObj } = user;
-    res.json({ token, user: userObj });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+router.post('/logout', (req, res) => {
+    res.json({ message: 'Logged out' });
 });
 
 module.exports = router;

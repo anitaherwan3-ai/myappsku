@@ -1,274 +1,327 @@
-import React, { useState } from 'react';
+
+import React, { useMemo, useState } from 'react';
 import { useApp } from '../context';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
-import { Filter, RotateCcw, Users, Activity, Divide, ClipboardList, Building2, Calendar } from 'lucide-react';
+import { 
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, AreaChart, Area 
+} from 'recharts';
+import { 
+  Users, Map, AlertTriangle, TrendingUp, ChevronRight, 
+  Filter, Calendar, Activity, Activity as ActivityIcon, 
+  ArrowUpRight, ArrowDownRight, ClipboardList
+} from 'lucide-react';
 
 const DashboardSummary = () => {
-    const { patients, activities, officers } = useApp();
+    const { patients, activities, isLoading } = useApp();
 
-    // Date Filter State
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
+    // Filter State
+    const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+    const [selectedActivity, setSelectedActivity] = useState<string>('all');
 
-    // Filter Logic
-    const filteredPatients = patients.filter(p => {
-        if (!startDate && !endDate) return true;
-        const pDate = new Date(p.visitDate);
-        const start = startDate ? new Date(startDate) : new Date('1970-01-01');
-        const end = endDate ? new Date(endDate) : new Date('2099-12-31');
-        return pDate >= start && pDate <= end;
-    });
+    // Filtering Logic
+    const filteredPatients = useMemo(() => {
+        return patients.filter(p => {
+            const date = new Date(p.visitDate);
+            const matchYear = selectedYear === 'all' || date.getFullYear().toString() === selectedYear;
+            const matchActivity = selectedActivity === 'all' || p.activityId === selectedActivity;
+            return matchYear && matchActivity;
+        });
+    }, [patients, selectedYear, selectedActivity]);
 
-    const filteredActivities = activities.filter(a => {
-        if (!startDate && !endDate) return true;
-        const aStart = new Date(a.startDate);
-        const filterStart = startDate ? new Date(startDate) : new Date('1970-01-01');
-        const filterEnd = endDate ? new Date(endDate) : new Date('2099-12-31');
-        return aStart >= filterStart && aStart <= filterEnd;
-    });
+    // Analytics Calculations
+    const stats = useMemo(() => {
+        const total = filteredPatients.length;
+        const red = filteredPatients.filter(p => p.triage === 'Red').length;
+        const yellow = filteredPatients.filter(p => p.triage === 'Yellow').length;
+        const green = filteredPatients.filter(p => p.triage === 'Green').length;
+        const referrals = filteredPatients.filter(p => p.referralStatus === 'Rujuk').length;
+        
+        // Top 10 Diseases
+        const diseaseMap: Record<string, number> = {};
+        filteredPatients.forEach(p => {
+            if (p.category === 'Berobat' && p.diagnosisName) {
+                diseaseMap[p.diagnosisName] = (diseaseMap[p.diagnosisName] || 0) + 1;
+            }
+        });
+        const topDiseases = Object.entries(diseaseMap)
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
 
-    // 1. Stats Cards with Gradients
-    const stats = [
-        { label: 'Total Pasien', value: filteredPatients.length, bg: 'bg-gradient-to-br from-blue-500 to-blue-600', icon: Users },
-        { label: 'Total Kegiatan', value: filteredActivities.length, bg: 'bg-gradient-to-br from-teal-500 to-emerald-600', icon: Calendar },
-        { label: 'Rujukan RS', value: filteredPatients.filter(p => p.referralStatus === 'Rujuk').length, bg: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: Building2 },
-        { label: 'Petugas Aktif', value: officers.length, bg: 'bg-gradient-to-br from-violet-500 to-purple-600', icon: ClipboardList },
-    ];
+        // Visit Trends (by Date)
+        const trendMap: Record<string, number> = {};
+        filteredPatients.forEach(p => {
+            trendMap[p.visitDate] = (trendMap[p.visitDate] || 0) + 1;
+        });
+        const visitTrend = Object.entries(trendMap)
+            .map(([date, count]) => ({ date, count }))
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // 2. Data Processing for Charts
-    const categoryCount = {
-        Berobat: filteredPatients.filter(p => p.category === 'Berobat').length,
-        MCU: filteredPatients.filter(p => p.category === 'MCU').length
-    };
-    const categoryData = [
-        { name: 'Berobat', value: categoryCount.Berobat },
-        { name: 'MCU', value: categoryCount.MCU },
-    ].filter(d => d.value > 0);
+        // Referral Data
+        const referralData = [
+            { name: 'Dirujuk', value: referrals, color: '#f43f5e' },
+            { name: 'Selesai/Rawat Jalan', value: total - referrals, color: '#10b981' }
+        ];
 
-    const COLORS = ['#0d9488', '#f59e0b']; 
+        return { 
+            total, red, yellow, green, referrals, 
+            topDiseases, visitTrend, referralData,
+            triageData: [
+                { name: 'Red', value: red, color: '#f43f5e' },
+                { name: 'Yellow', value: yellow, color: '#fbbf24' },
+                { name: 'Green', value: green, color: '#10b981' },
+            ]
+        };
+    }, [filteredPatients]);
 
-    const referralCount = {
-        'Tidak Rujuk': filteredPatients.filter(p => p.referralStatus === 'Tidak Rujuk').length,
-        'Rujuk': filteredPatients.filter(p => p.referralStatus === 'Rujuk').length
-    };
-    const referralData = [
-        { name: 'Tidak Rujuk', value: referralCount['Tidak Rujuk'] },
-        { name: 'Rujuk', value: referralCount['Rujuk'] },
-    ].filter(d => d.value > 0);
+    const availableYears = useMemo(() => {
+        const years = new Set(patients.map(p => new Date(p.visitDate).getFullYear().toString()));
+        years.add(new Date().getFullYear().toString());
+        return Array.from(years).sort().reverse();
+    }, [patients]);
 
-    const REF_COLORS = ['#3b82f6', '#ef4444'];
-
-    // Top Diseases
-    const diseaseCounts: Record<string, number> = {};
-    filteredPatients.forEach(p => {
-        if (p.category === 'Berobat' && p.diagnosisName) {
-            diseaseCounts[p.diagnosisName] = (diseaseCounts[p.diagnosisName] || 0) + 1;
-        }
-    });
-    const diseaseData = Object.entries(diseaseCounts)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 5);
-
-    // Average Patients
-    const totalP = filteredPatients.length;
-    const totalA = filteredActivities.length;
-    const avgPatients = totalA > 0 ? (totalP / totalA).toFixed(1) : '0';
-
-    // Custom Label for Pie Chart
-    const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-        const RADIAN = Math.PI / 180;
-        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-        const x = cx + radius * Math.cos(-midAngle * RADIAN);
-        const y = cy + radius * Math.sin(-midAngle * RADIAN);
-        if (isNaN(percent) || percent === 0) return null;
-        return (
-          <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12} fontWeight="bold">
-            {`${(percent * 100).toFixed(0)}%`}
-          </text>
-        );
-    };
-
-    // Fixed Tooltip Logic (No Division by zero or complex calc)
-    const CustomTooltip = ({ active, payload }: any) => {
-        if (active && payload && payload.length) {
-            const data = payload[0].payload;
-            return (
-                <div className="bg-white p-3 border border-gray-200 shadow-xl rounded-lg z-50">
-                    <p className="font-bold text-gray-800 text-sm">{data.name}</p>
-                    <p className="text-sm text-gray-600">
-                        Jumlah: <span className="font-bold text-primary">{data.value}</span>
-                    </p>
-                </div>
-            );
-        }
-        return null;
-    };
+    if (isLoading) return (
+        <div className="h-full flex flex-col items-center justify-center p-20 text-slate-400">
+            <ActivityIcon size={48} className="animate-spin text-primary mb-4" />
+            <p className="font-bold tracking-widest animate-pulse">MEMUAT DATA INTELIJEN...</p>
+        </div>
+    );
 
     return (
-        <div className="space-y-6 md:space-y-8 font-sans pb-10">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Dashboard Ringkasan</h2>
+        <div className="space-y-8 pb-20 animate-fade-in">
+            {/* Header & Advanced Filter Bar */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
+                <div>
+                    <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+                        <ActivityIcon className="text-primary" /> Analisis War Room PCC
+                    </h2>
+                    <p className="text-slate-400 text-sm">Monitor kesehatan masyarakat Sumatera Selatan secara real-time.</p>
+                </div>
                 
-                <div className="bg-white p-3 rounded-lg shadow-md border border-gray-200 flex flex-col sm:flex-row items-start sm:items-center gap-3 text-sm w-full md:w-auto">
-                    <div className="flex items-center gap-2 px-2 text-gray-700 font-bold border-b sm:border-b-0 sm:border-r border-gray-200 pb-2 sm:pb-0 sm:pr-4 w-full sm:w-auto">
-                        <Filter size={18} className="text-primary"/> Filter:
+                <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                    <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 w-full sm:w-auto">
+                        <div className="p-2 text-slate-400"><Calendar size={18}/></div>
+                        <select 
+                            className="bg-transparent border-none text-sm font-bold text-slate-700 focus:ring-0 outline-none pr-8 cursor-pointer"
+                            value={selectedYear}
+                            onChange={e => setSelectedYear(e.target.value)}
+                        >
+                            <option value="all">Semua Tahun</option>
+                            {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                        <div className="flex items-center gap-2 flex-1 sm:flex-none">
-                            <span className="text-gray-500 text-xs uppercase font-bold hidden sm:inline">Mulai</span>
-                            <input 
-                                type="date" 
-                                className="border border-gray-300 rounded-md px-2 py-1.5 text-gray-900 bg-white focus:ring-2 focus:ring-primary outline-none text-xs w-full"
-                                value={startDate}
-                                onChange={e => setStartDate(e.target.value)}
-                            />
-                        </div>
-                        <span className="text-gray-400 font-bold">-</span>
-                        <div className="flex items-center gap-2 flex-1 sm:flex-none">
-                             <span className="text-gray-500 text-xs uppercase font-bold hidden sm:inline">Sampai</span>
-                            <input 
-                                type="date" 
-                                className="border border-gray-300 rounded-md px-2 py-1.5 text-gray-900 bg-white focus:ring-2 focus:ring-primary outline-none text-xs w-full"
-                                value={endDate}
-                                onChange={e => setEndDate(e.target.value)}
-                            />
-                        </div>
-                        {(startDate || endDate) && (
-                            <button 
-                                onClick={() => { setStartDate(''); setEndDate(''); }}
-                                className="ml-0 sm:ml-2 text-xs text-red-600 font-bold hover:text-red-800 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 flex items-center gap-1 w-full sm:w-auto justify-center"
-                            >
-                                <RotateCcw size={12}/> Reset
-                            </button>
-                        )}
+
+                    <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 w-full sm:w-auto">
+                        <div className="p-2 text-slate-400"><Activity size={18}/></div>
+                        <select 
+                            className="bg-transparent border-none text-sm font-bold text-slate-700 focus:ring-0 outline-none pr-8 cursor-pointer max-w-[200px]"
+                            value={selectedActivity}
+                            onChange={e => setSelectedActivity(e.target.value)}
+                        >
+                            <option value="all">Semua Kegiatan</option>
+                            {activities.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                        </select>
                     </div>
+                    
+                    <button 
+                        onClick={() => window.print()}
+                        className="bg-primary text-white p-3 rounded-2xl shadow-lg shadow-primary/20 hover:bg-secondary transition-all active:scale-95"
+                        title="Cetak Laporan Dashboard"
+                    >
+                        <ClipboardList size={20} />
+                    </button>
                 </div>
             </div>
 
-            {/* Gradient Infographics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                {stats.map((stat, idx) => (
-                    <div key={idx} className={`${stat.bg} p-6 rounded-2xl shadow-lg text-white flex items-center justify-between transition hover:-translate-y-1 hover:shadow-xl relative overflow-hidden group`}>
-                        <div className="absolute right-0 top-0 opacity-10 transform translate-x-1/4 -translate-y-1/4 group-hover:scale-110 transition-transform duration-500">
-                            {React.createElement(stat.icon || Activity, { size: 120 })}
+            {/* KPI Cards Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                    { label: 'Total Registrasi', val: stats.total, color: 'text-primary', bg: 'bg-primary/10', icon: Users },
+                    { label: 'Kasus Kritis (Red)', val: stats.red, color: 'text-rose-600', bg: 'bg-rose-600', text: 'text-white', icon: AlertTriangle, shadow: 'shadow-rose-200' },
+                    { label: 'Kasus Mendesak', val: stats.yellow, color: 'text-amber-500', bg: 'bg-amber-400', text: 'text-white', icon: TrendingUp, shadow: 'shadow-amber-100' },
+                    { label: 'Total Rujukan', val: stats.referrals, color: 'text-blue-600', bg: 'bg-blue-600', text: 'text-white', icon: ArrowUpRight, shadow: 'shadow-blue-100' }
+                ].map((kpi, i) => (
+                    <div key={i} className={`${kpi.text ? kpi.bg : 'bg-white'} p-6 rounded-[32px] border ${kpi.text ? 'border-transparent' : 'border-slate-100'} shadow-sm ${kpi.shadow || ''} flex items-center justify-between group hover:scale-[1.02] transition-all`}>
+                        <div>
+                            <p className={`text-[10px] font-bold ${kpi.text ? 'text-white/70' : 'text-slate-400'} uppercase tracking-widest mb-1`}>{kpi.label}</p>
+                            <h3 className={`text-3xl font-black ${kpi.text ? 'text-white' : 'text-slate-800'}`}>{kpi.val}</h3>
                         </div>
-                        <div className="relative z-10">
-                            <p className="text-blue-100 text-sm font-bold uppercase tracking-wider mb-1">{stat.label}</p>
-                            <h3 className="text-3xl md:text-4xl font-extrabold">{stat.value}</h3>
-                        </div>
-                        <div className="bg-white/20 p-3 rounded-xl relative z-10 backdrop-blur-sm">
-                            {React.createElement(stat.icon || Activity, { size: 24 })}
+                        <div className={`w-14 h-14 rounded-2xl ${kpi.text ? 'bg-white/20' : kpi.bg} ${kpi.text ? 'text-white' : kpi.color} flex items-center justify-center`}>
+                            <kpi.icon size={28}/>
                         </div>
                     </div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                {/* 1. Pie Chart: Kategori Pasien */}
-                <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 min-h-[350px] md:min-h-[400px] flex flex-col">
-                    <h3 className="font-bold text-lg mb-4 text-gray-700 border-b pb-2">Kategori Pasien</h3>
-                    <div className="flex-1 w-full h-56 md:h-64">
+            {/* Main Analytics Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                {/* 1. TOP 10 DISEASES (BAR CHART) */}
+                <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-xl">
+                    <div className="flex justify-between items-center mb-8">
+                        <div>
+                            <h3 className="text-xl font-black text-slate-800">10 Penyakit Terbanyak</h3>
+                            <p className="text-slate-400 text-xs">Berdasarkan data diagnosis ICD-10 pasien berobat.</p>
+                        </div>
+                        <div className="p-3 bg-primary/5 text-primary rounded-2xl"><TrendingUp size={20}/></div>
+                    </div>
+                    <div className="h-[400px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie 
-                                    data={categoryData} 
-                                    cx="50%" 
-                                    cy="50%"
-                                    innerRadius={60} 
-                                    outerRadius={80} 
-                                    paddingAngle={5} 
-                                    dataKey="value"
-                                    labelLine={false}
-                                    label={renderCustomizedLabel}
-                                >
-                                    {categoryData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            <BarChart data={stats.topDiseases} layout="vertical" margin={{ left: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                                <XAxis type="number" hide />
+                                <YAxis 
+                                    dataKey="name" 
+                                    type="category" 
+                                    width={150} 
+                                    fontSize={10} 
+                                    fontWeight="bold" 
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <Tooltip 
+                                    cursor={{ fill: '#f8fafc' }}
+                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                                />
+                                <Bar dataKey="count" radius={[0, 10, 10, 0]}>
+                                    {stats.topDiseases.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={index < 3 ? '#0d9488' : '#94a3b8'} />
                                     ))}
-                                </Pie>
-                                <RechartsTooltip content={<CustomTooltip />} />
-                                <Legend verticalAlign="bottom" height={36} iconType="circle"/>
-                            </PieChart>
+                                </Bar>
+                            </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
-                {/* 2. Pie Chart: Status Rujukan */}
-                <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 min-h-[350px] md:min-h-[400px] flex flex-col">
-                    <h3 className="font-bold text-lg mb-4 text-gray-700 border-b pb-2">Status Rujukan</h3>
-                    <div className="flex-1 w-full h-56 md:h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie 
-                                    data={referralData} 
-                                    cx="50%" 
-                                    cy="50%"
-                                    innerRadius={60} 
-                                    outerRadius={80} 
-                                    paddingAngle={5} 
-                                    dataKey="value"
-                                    labelLine={false}
-                                    label={renderCustomizedLabel}
-                                >
-                                    {referralData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={REF_COLORS[index % REF_COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <RechartsTooltip content={<CustomTooltip />} />
-                                <Legend verticalAlign="bottom" height={36} iconType="circle"/>
-                            </PieChart>
-                        </ResponsiveContainer>
+                {/* 2. VISIT TRENDS (LINE/AREA CHART) */}
+                <div className="bg-slate-900 rounded-[40px] p-8 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-10 opacity-5 text-white"><TrendingUp size={150}/></div>
+                    <div className="relative z-10">
+                        <div className="flex justify-between items-center mb-8">
+                            <div>
+                                <h3 className="text-xl font-black text-white">Tren Kunjungan Pasien</h3>
+                                <p className="text-slate-400 text-xs">Fluktuasi jumlah pasien per tanggal kunjungan.</p>
+                            </div>
+                        </div>
+                        <div className="h-[400px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={stats.visitTrend}>
+                                    <defs>
+                                        <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#0d9488" stopOpacity={0.3}/>
+                                            <stop offset="95%" stopColor="#0d9488" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <XAxis dataKey="date" stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
+                                    <Tooltip 
+                                        contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '16px', color: '#fff' }}
+                                        itemStyle={{ color: '#0d9488', fontWeight: 'bold' }}
+                                    />
+                                    <Area type="monotone" dataKey="count" stroke="#0d9488" strokeWidth={4} fillOpacity={1} fill="url(#colorCount)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. TRIAGE & REFERRAL DISTRIBUTION (PIE CHARTS) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:col-span-2">
+                    {/* Triage Pie */}
+                    <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-xl flex flex-col items-center">
+                        <h3 className="text-lg font-black text-slate-800 mb-6 self-start">Prioritas Triage</h3>
+                        <div className="h-[250px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={stats.triageData}
+                                        innerRadius={60} outerRadius={80}
+                                        paddingAngle={5} dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {stats.triageData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 w-full mt-4">
+                            {stats.triageData.map(t => (
+                                <div key={t.name} className="text-center p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase">{t.name}</p>
+                                    <p className="text-lg font-black" style={{color: t.color}}>{t.value}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Referral Pie */}
+                    <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-xl flex flex-col items-center">
+                        <h3 className="text-lg font-black text-slate-800 mb-6 self-start">Outcome Pasien (Rujukan)</h3>
+                        <div className="h-[250px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={stats.referralData}
+                                        innerRadius={0} outerRadius={80}
+                                        dataKey="value"
+                                        stroke="#fff" strokeWidth={2}
+                                    >
+                                        {stats.referralData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 w-full mt-4">
+                            {stats.referralData.map(r => (
+                                <div key={r.name} className="text-center p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase">{r.name}</p>
+                                    <p className="text-lg font-black" style={{color: r.color}}>{r.value}</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                {/* 3. Top 5 Diseases */}
-                <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg border border-gray-100">
-                    <h3 className="font-bold text-lg mb-4 text-gray-700 border-b pb-2">5 Penyakit Terbanyak</h3>
-                    <div className="space-y-4">
-                        {diseaseData.length > 0 ? diseaseData.map((d, i) => (
-                            <div key={i} className="flex items-center justify-between">
-                                <span className="text-gray-700 font-medium flex items-center gap-2 text-sm md:text-base">
-                                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${i === 0 ? 'bg-yellow-500' : 'bg-gray-400'}`}>{i+1}</span>
-                                    {d.name}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-16 md:w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                        <div className="h-full bg-primary" style={{ width: `${(d.value / diseaseData[0].value) * 100}%` }}></div>
-                                    </div>
-                                    <span className="text-sm font-bold text-gray-800">{d.value}</span>
-                                </div>
-                            </div>
-                        )) : <p className="text-gray-400 italic text-center py-4">Belum ada data penyakit.</p>}
+            {/* Simulated Live Feed Section */}
+            <div className="bg-slate-900 rounded-[40px] p-8 shadow-2xl overflow-hidden">
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h3 className="text-xl font-black text-white">Log Intelijen Terbaru</h3>
+                        <p className="text-slate-400 text-xs">Aktivitas pendaftaran dan pemeriksaan medis terkini.</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
+                        <span className="text-white text-[10px] font-bold tracking-widest uppercase">Live War Room</span>
                     </div>
                 </div>
-
-                {/* 4. Average Infographic */}
-                <div className="bg-gradient-to-br from-indigo-600 to-purple-800 p-6 md:p-8 rounded-xl shadow-lg text-white flex flex-col justify-center items-center relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none flex justify-center items-center">
-                        <Activity size={200} className="animate-pulse" />
-                    </div>
-                    
-                    <h3 className="text-lg md:text-xl font-bold mb-6 text-indigo-100 uppercase tracking-widest z-10 flex items-center gap-2 border-b border-indigo-400 pb-2">
-                        <Divide size={20} /> Statistik Layanan
-                    </h3>
-                    
-                    <div className="z-10 text-center">
-                        <span className="text-5xl md:text-7xl font-extrabold tracking-tighter drop-shadow-2xl">{avgPatients}</span>
-                        <p className="text-sm md:text-lg font-medium text-indigo-100 mt-2">Rata-rata Pasien / Kegiatan</p>
-                    </div>
-
-                    <div className="mt-8 grid grid-cols-2 gap-8 w-full max-w-xs z-10 border-t border-white/20 pt-6">
-                        <div className="text-center">
-                            <span className="block text-xl md:text-2xl font-bold">{totalP}</span>
-                            <span className="text-[10px] md:text-xs uppercase text-indigo-200 font-bold">Total Pasien</span>
+                <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-4">
+                    {patients.slice(0, 10).map((p, i) => (
+                        <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 transition-colors">
+                            <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs ${
+                                    p.triage === 'Red' ? 'bg-rose-500 text-white' : 
+                                    p.triage === 'Yellow' ? 'bg-amber-400 text-white' : 'bg-emerald-500 text-white'
+                                }`}>
+                                    {p.triage.charAt(0)}
+                                </div>
+                                <div>
+                                    <p className="text-white font-bold text-sm uppercase">{p.name}</p>
+                                    <p className="text-slate-500 text-[10px] font-mono tracking-wider">{p.mrn} • {p.visitDate}</p>
+                                </div>
+                            </div>
+                            <div className="text-right hidden sm:block">
+                                <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">Status Diagnosis</p>
+                                <p className="text-primary text-xs font-black truncate max-w-[200px]">{p.diagnosisName || 'Pengecekan Rutin'}</p>
+                            </div>
                         </div>
-                        <div className="text-center">
-                            <span className="block text-xl md:text-2xl font-bold">{totalA}</span>
-                            <span className="text-[10px] md:text-xs uppercase text-indigo-200 font-bold">Total Kegiatan</span>
-                        </div>
-                    </div>
+                    ))}
                 </div>
             </div>
         </div>
