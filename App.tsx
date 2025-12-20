@@ -60,8 +60,8 @@ const Login = () => {
   const { login } = useApp();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [email, setEmail] = useState('admin@pcc.sumsel.go.id');
-  const [pass, setPass] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [pass, setPass] = useState('');
   const [error, setError] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -75,7 +75,7 @@ const Login = () => {
         navigate('/dashboard');
       }
     } else {
-      setError('Akses ditolak: Kredensial tidak valid.');
+      setError('Akses ditolak: Email atau Password salah.');
     }
   };
 
@@ -94,19 +94,13 @@ const Login = () => {
         <div className="space-y-5">
           <div>
             <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-wider">Email Command Center</label>
-            <input type="email" required placeholder="name@pcc.gov" className="w-full rounded-2xl bg-white/5 border border-white/10 p-3.5 text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-600" value={email} onChange={e => setEmail(e.target.value)} />
+            <input type="email" required placeholder="name@pcc.sumsel.go.id" className="w-full rounded-2xl bg-white/5 border border-white/10 p-3.5 text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-600" value={email} onChange={e => setEmail(e.target.value)} />
           </div>
           <div>
             <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-wider">Access Token / Password</label>
             <input type="password" required className="w-full rounded-2xl bg-white/5 border border-white/10 p-3.5 text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" value={pass} onChange={e => setPass(e.target.value)} />
           </div>
           
-          <div className="p-4 bg-primary/10 border border-primary/20 rounded-2xl">
-              <p className="text-[10px] font-bold text-primary uppercase mb-1">Tes Kredensial (Offline Mode):</p>
-              <code className="text-[10px] text-white/80 block">Email: admin@pcc.sumsel.go.id</code>
-              <code className="text-[10px] text-white/80 block">Pass: admin123</code>
-          </div>
-
           <button type="submit" className="w-full bg-primary text-white py-4 rounded-2xl font-black hover:bg-secondary transition shadow-xl shadow-primary/20 active:scale-95">OTORISASI AKSES</button>
           <button type="button" onClick={() => navigate('/')} className="w-full text-slate-500 text-[10px] mt-2 hover:text-white font-black uppercase tracking-widest">KEMBALI KE PORTAL PUBLIK</button>
         </div>

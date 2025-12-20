@@ -5,12 +5,12 @@ import { useApp } from '../context';
 import { 
     LayoutDashboard, Calendar, Users, FileText, LogOut, 
     FilePlus, Database, Menu, X, 
-    ClipboardCheck, WifiOff, Map, Moon, Sun, ShieldAlert,
+    ClipboardCheck, Map, Moon, Sun, ShieldAlert,
     ChevronRight, Settings
 } from 'lucide-react';
 
 const DashboardLayout = () => {
-  const { user, logout, isOffline, patients } = useApp();
+  const { user, logout, patients } = useApp();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -82,7 +82,7 @@ const DashboardLayout = () => {
           )}
         </nav>
 
-        {/* Sidebar Footer - Cleaned (No Critical Alert) */}
+        {/* Sidebar Footer */}
         <div className="p-4 border-t border-slate-800/50 space-y-3">
            <div className="bg-slate-800/50 rounded-[24px] p-3 flex items-center gap-3">
                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center font-black text-sm text-primary border border-slate-700">
@@ -114,13 +114,6 @@ const DashboardLayout = () => {
             </div>
             <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center font-black text-xs text-primary">{user?.name.charAt(0)}</div>
         </div>
-
-        {isOffline && (
-            <div className="bg-amber-500 text-white px-4 py-2.5 flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest print:hidden animate-fade-in shadow-lg relative z-30">
-                <WifiOff size={14} />
-                <span>Mode Offline Aktif - Data Disimpan Secara Lokal</span>
-            </div>
-        )}
 
         {/* Content Wrapper */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 custom-scrollbar relative z-10">
