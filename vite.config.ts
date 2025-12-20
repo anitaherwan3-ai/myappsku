@@ -7,14 +7,14 @@ export default defineConfig({
     react(),
   ],
   // Base URL default '/', cocok untuk domain utama (public_html).
-  // Jika deploy di subfolder (misal domain.com/pcc), ubah menjadi base: '/pcc/'
   base: '/',
   server: {
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000', // Proxy ini hanya aktif saat mode DEV (npm run dev)
+        target: 'http://127.0.0.1:8000', // Diarahkan ke IP lokal Laravel
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '/api'), // Memastikan /api tetap ada jika Laravel membutuhkannya
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -28,7 +28,15 @@ export default defineConfig({
     },
   },
   build: {
-    // Pastikan folder output bersih sebelum build
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom', 'axios', 'lucide-react'],
+          charts: ['recharts'],
+          utils: ['xlsx']
+        }
+      }
+    }
   }
 });

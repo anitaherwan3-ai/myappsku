@@ -1,10 +1,25 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { AppState, Officer, Activity, News, Patient, ICD10, CarouselItem, OfficerLog, PatientCategory, TriageLevel } from './types';
-import axios from 'axios';
+import { AppState, Officer, Activity, News, Patient, ICD10, CarouselItem, OfficerLog } from './types';
+import axios, { AxiosError } from 'axios';
 
-// KONFIGURASI API - Mengambil dari environment variable atau default ke /api
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || '/api';
+// PERBAIKAN: Deteksi URL API yang lebih aman untuk menghindari "Invalid URL"
+const getBaseUrl = () => {
+  // Jika dijalankan di lingkungan browser standar
+  const defaultUrl = 'http://localhost:8000/api';
+  
+  try {
+    // Mencoba mengambil dari environment variable jika tersedia
+    if (typeof process !== 'undefined' && process.env?.VITE_API_URL) {
+      return process.env.VITE_API_URL;
+    }
+    return defaultUrl;
+  } catch (e) {
+    return defaultUrl;
+  }
+};
+
+const API_BASE_URL = getBaseUrl();
 
 axios.defaults.baseURL = API_BASE_URL;
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
@@ -72,16 +87,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const fetchPublicData = useCallback(async () => {
     try {
       const [resAct, resNews, resCarousel] = await Promise.all([
-        axios.get('/activities'),
-        axios.get('/news'), 
-        axios.get('/carousel')
+        axios.get('/activities').catch(e => ({ data: [], error: e })),
+        axios.get('/news').catch(e => ({ data: [], error: e })), 
+        axios.get('/carousel').catch(e => ({ data: [], error: e }))
       ]);
       
-      setActivities(resAct.data.data || resAct.data);
-      setNews(resNews.data.data || resNews.data);
-      setCarouselItems(resCarousel.data.data || resCarousel.data);
+      setActivities(Array.isArray(resAct.data) ? resAct.data : (resAct.data as any)?.data || []);
+      setNews(Array.isArray(resNews.data) ? resNews.data : (resNews.data as any)?.data || []);
+      setCarouselItems(Array.isArray(resCarousel.data) ? resCarousel.data : (resCarousel.data as any)?.data || []);
+
     } catch (error) {
-      console.error("Gagal memuat data publik dari server.");
+      console.error("Gagal memuat data publik.");
     } finally {
         setIsLoading(false); 
     }
@@ -89,7 +105,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchProtectedData = useCallback(async () => {
     if (!token) return;
-
     try {
       const [resPat, resOff, resIcd, resLogs] = await Promise.all([
         axios.get('/patients'),
@@ -98,15 +113,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         axios.get('/logs')
       ]);
       
-      setPatients(resPat.data.data || resPat.data);
-      setOfficers(resOff.data.data || resOff.data);
-      setIcd10List(resIcd.data.data || resIcd.data);
-      setLogs(resLogs.data.data || resLogs.data);
+      setPatients(resPat.data.data || resPat.data || []);
+      setOfficers(resOff.data.data || resOff.data || []);
+      setIcd10List(resIcd.data.data || resIcd.data || []);
+      setLogs(resLogs.data.data || resLogs.data || []);
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-          logout();
-      }
-      console.error("Gagal memuat data terproteksi.");
+      const err = error as AxiosError;
+      if (err.response?.status === 401) logout();
     }
   }, [token]);
 
@@ -115,10 +128,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchPublicData]);
 
   useEffect(() => {
-    if (user) {
+    if (user && token) {
       fetchProtectedData();
     }
-  }, [user, fetchProtectedData]);
+  }, [user, token, fetchProtectedData]);
 
   const login = async (email: string, pass: string) => {
     try {
@@ -129,10 +142,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setToken(data.token);
         localStorage.setItem('pcc_user', JSON.stringify(data.user));
         localStorage.setItem('pcc_token', data.token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
         return true;
       }
     } catch (e) {
-      console.error("Login Error:", e);
+      console.error("Login Gagal");
     }
     return false;
   };
@@ -144,6 +158,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('pcc_token');
     delete axios.defaults.headers.common['Authorization'];
     setPatients([]);
+    setOfficers([]);
+    setLogs([]);
   };
 
   const performAction = async (endpoint: string, method: 'post' | 'put' | 'delete', data: any) => {
@@ -158,14 +174,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             await axios[method](url, data);
         }
         
-        // Refresh data setelah aksi berhasil
         if (['patients', 'officers', 'icd10', 'logs'].includes(endpoint)) {
             fetchProtectedData();
         } else {
             fetchPublicData();
         }
     } catch(e) {
-        console.error(`Gagal melakukan aksi ${method} pada ${endpoint}:`, e);
+        console.error(`Aksi ${method.toUpperCase()} gagal`);
         throw e;
     }
   };

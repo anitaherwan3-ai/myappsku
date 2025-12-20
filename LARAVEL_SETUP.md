@@ -1,11 +1,17 @@
 
-# PANDUAN FINAL SETUP BACKEND LARAVEL (UPDATED V2.5)
+# PANDUAN FINAL SETUP BACKEND LARAVEL (UPDATED V2.6)
 
-## Pembaruan Migrasi (PENTING!)
-Ubah file migrasi Anda di `database/migrations/` (terutama tabel `patients` dan `activities`) untuk mendukung fitur baru:
+## 1. Persiapan Awal
+Pastikan Anda menggunakan Laravel 11. Jika file `config/cors.php` tidak ada, jalankan perintah berikut:
+```bash
+php artisan config:publish cors
+```
+
+## 2. Pembaruan Migrasi
+Ubah file migrasi Anda di `database/migrations/` untuk mendukung fitur koordinat dan rekam medis lengkap:
 
 ```php
-// 2. Activities (Ditambah Lat Lng)
+// Activities Table
 Schema::create('activities', function (Blueprint $table) {
     $table->uuid('id')->primary();
     $table->string('name');
@@ -13,19 +19,19 @@ Schema::create('activities', function (Blueprint $table) {
     $table->date('end_date');
     $table->string('host');
     $table->string('location');
-    $table->double('latitude')->nullable(); // UNTUK PETA
-    $table->double('longitude')->nullable(); // UNTUK PETA
+    $table->double('latitude')->nullable();
+    $table->double('longitude')->nullable();
     $table->string('status'); 
     $table->timestamps();
 });
 
-// 7. Patients (Ditambah Field Medis Baru)
+// Patients Table
 Schema::create('patients', function (Blueprint $table) {
     $table->uuid('id')->primary();
     $table->string('mrn');
     $table->foreignUuid('activity_id')->constrained('activities')->onDelete('cascade');
     $table->string('name');
-    $table->string('identity_no')->nullable()->index(); // Index untuk pencarian cepat
+    $table->string('identity_no')->nullable()->index();
     $table->enum('gender', ['L', 'P']);
     $table->date('dob')->nullable();
     $table->integer('age')->default(0);
@@ -34,9 +40,9 @@ Schema::create('patients', function (Blueprint $table) {
     $table->date('visit_date');
     $table->string('category'); 
 
-    // Field Baru V2.5
-    $table->string('triage')->default('Green'); // Red, Yellow, Green
-    $table->string('blood_type')->nullable(); // A, B, AB, O
+    // Medical Details
+    $table->string('triage')->default('Green');
+    $table->string('blood_type')->nullable();
     $table->text('allergies')->nullable(); 
     $table->double('latitude')->nullable();
     $table->double('longitude')->nullable();
@@ -50,16 +56,13 @@ Schema::create('patients', function (Blueprint $table) {
     $table->integer('pulse')->nullable();
     $table->text('history_illness')->nullable();
 
-    // Berobat
+    // Berobat & MCU
     $table->text('subjective')->nullable();
     $table->text('physical_exam')->nullable();
     $table->string('diagnosis_code')->nullable();
     $table->string('diagnosis_name')->nullable();
     $table->text('therapy')->nullable();
     $table->string('referral_status')->nullable();
-    $table->text('referral_notes')->nullable();
-
-    // MCU
     $table->json('mcu_data')->nullable();
     $table->text('mcu_conclusion')->nullable();
     $table->text('mcu_recommendation')->nullable();
@@ -69,27 +72,26 @@ Schema::create('patients', function (Blueprint $table) {
 });
 ```
 
-## Pembaruan ApiController.php
-Pastikan mapping di `formatPatientIn` dan `formatPatientOut` menyertakan field baru:
-
+## 3. Konfigurasi CORS (config/cors.php)
+Setelah dipublikasikan, pastikan pengaturannya seperti ini agar Frontend React (Vite) bisa mengakses:
 ```php
-// In formatPatientIn:
-'triage' => $req->triage,
-'blood_type' => $req->bloodType,
-'allergies' => $req->allergies,
-'latitude' => $req->latitude,
-'longitude' => $req->longitude,
-
-// In formatPatientOut:
-'triage' => $p->triage,
-'bloodType' => $p->blood_type,
-'allergies' => $p->allergies,
-'latitude' => $p->latitude,
-'longitude' => $p->longitude,
+'paths' => ['api/*', 'sanctum/csrf-cookie'],
+'allowed_methods' => ['*'],
+'allowed_origins' => ['*'], // Ganti dengan http://localhost:5173 saat production
+'allowed_origins_patterns' => [],
+'allowed_headers' => ['*'],
+'exposed_headers' => [],
+'max_age' => 0,
+'supports_credentials' => true,
 ```
 
-## Jalankan Ulang Migrasi
+## 4. Jalankan Migrasi
 ```bash
 php artisan migrate:fresh
 ```
-*Peringatan: Perintah ini akan menghapus data lama. Pastikan sudah backup jika ada data penting.*
+
+## 5. Menjalankan Server
+```bash
+php artisan serve
+```
+Backend akan berjalan di `http://127.0.0.1:8000`.
