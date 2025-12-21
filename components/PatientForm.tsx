@@ -3,10 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context';
 import { Patient, TriageLevel, PatientCategory, ReferralStatus } from '../types';
 import { 
-  User, Stethoscope, HeartPulse, Save, AlertTriangle, Eye, ClipboardCheck,
-  ShieldAlert, Microscope, ChevronLeft, Calendar, Calculator, FileText,
-  Zap, Crosshair, Activity, ArrowUpRight, ZapOff, Siren, Ear, Footprints,
-  Baby, Syringe, ClipboardList, Info, CheckCircle2, History, UserCheck
+  User, Stethoscope, HeartPulse, Save, Eye, Microscope, ChevronLeft, Calculator, 
+  Zap, Siren, Wind, Footprints, ClipboardList, Clock, UserCheck
 } from 'lucide-react';
 
 interface Props {
@@ -16,8 +14,7 @@ interface Props {
 }
 
 const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
-  const { activities, user, addPatient, icd10List } = useApp();
-  const [activeTab, setActiveTab] = useState<'basic' | 'medis' | 'mcu'>('basic');
+  const { activities, user, addPatient, updatePatient, icd10List } = useApp();
 
   const [formData, setFormData] = useState<Partial<Patient>>(initialData || {
     category: 'Berobat',
@@ -29,12 +26,6 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
     age: 0, height: 0, weight: 0, temperature: 36.5, respiration: 20, pulse: 80,
     referralStatus: 'Selesai'
   });
-
-  // Enforcement: Only allow relevant tabs
-  useEffect(() => {
-    if (formData.category === 'Berobat' && activeTab === 'mcu') setActiveTab('medis');
-    if (formData.category === 'MCU' && activeTab === 'medis') setActiveTab('mcu');
-  }, [formData.category]);
 
   useEffect(() => {
     if (formData.height && formData.weight && formData.height > 0) {
@@ -48,153 +39,149 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
     }
   }, [formData.height, formData.weight]);
 
-  const handleChange = (field: keyof Patient, value: any) => setFormData(prev => ({ ...prev, [field]: value }));
+  const handleChange = (field: keyof Patient, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
-  // FEATURE: Quick Fill Normal for MCU
   const setMcuNormal = () => {
     if (window.confirm("Isi semua hasil pemeriksaan fisik dengan status 'Normal'?")) {
+      const normalData: Partial<Patient> = {
+        bloodPressure: '120/80',
+        pulse: 80,
+        respiration: 20,
+        temperature: 36.5,
+        visusOD: '6/6', 
+        visusOS: '6/6', 
+        colorBlind: 'Negatif', 
+        rightEar: 'Normal', 
+        leftEar: 'Normal',
+        nose: 'Normal', 
+        teeth: 'Normal', 
+        tonsil: 'T1-T1 Tenang', 
+        thorax: 'Normal', 
+        abdomen: 'Normal',
+        hernia: '(-) Tidak Ada', 
+        hemorrhoids: '(-) Tidak Ada', 
+        varicose: '(-) Tidak Ada',
+        extremityDeformity: '(-) Tidak Ada', 
+        reflexPupil: '(+) Isokor', 
+        reflexPatella: '(+) Normal', 
+        reflexAchilles: '(+) Normal', 
+        rontgen: 'Cor & Pulmo dalam batas normal',
+        ekg: 'Sinus Rhythm',
+        laboratory: 'Darah Rutin & Urin Rutin dalam batas normal',
+        mcuConclusion: 'SEHAT / FIT FOR WORK'
+      };
+      
       setFormData(prev => ({
         ...prev,
-        visusOD: '6/6',
-        visusOS: '6/6',
-        colorBlind: 'Negatif',
-        rightEar: 'Normal',
-        leftEar: 'Normal',
-        nose: 'Normal',
-        teeth: 'Karies (-)',
-        tonsil: 'T1-T1 Tenang',
-        thorax: 'Cor/Pulmo Normal',
-        abdomen: 'Supel, BU (+) Normal',
-        hernia: 'Tidak Ditemukan',
-        hemorrhoids: 'Tidak Ditemukan',
-        varicose: 'Tidak Ditemukan',
-        reflexPupil: '(+) Isokor',
-        reflexPatella: '(+) Normal',
-        reflexAchilles: '(+) Normal',
-        mcuConclusion: 'SEHAT / FIT FOR WORK'
+        ...normalData
       }));
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.activityId) return alert("Pilih Event/Kegiatan.");
+    if (!formData.activityId) return alert("Pilih Event/Kegiatan operasional.");
     
     const finalName = formData.isEmergency && !formData.name ? `PASIEN DARURAT (${formData.mrn})` : formData.name;
     const finalNIK = formData.isEmergency && !formData.identityNo ? 'BYPASS-EMERGENCY' : formData.identityNo;
 
     if (!formData.isEmergency && (!finalName || !finalNIK)) {
-        return alert("Nama dan NIK wajib diisi.");
+        return alert("Nama dan NIK wajib diisi untuk registrasi normal.");
     }
 
-    addPatient({ 
+    const patientPayload = { 
         ...formData, 
         name: finalName,
         identityNo: finalNIK,
         id: formData.id || crypto.randomUUID(), 
-        lastModifiedBy: user?.name || 'Sistem', 
+        lastModifiedBy: user?.name || 'Sistem PCC', 
         lastModifiedAt: new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
-    } as Patient);
+    } as Patient;
+
+    if (initialData?.id) {
+        updatePatient(patientPayload);
+    } else {
+        addPatient(patientPayload);
+    }
     onSave();
   };
 
   const cardClass = "bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm transition-all";
   const labelClass = "text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 block";
-  const inputClass = "w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl focus:bg-white focus:ring-4 focus:ring-primary/5 outline-none transition-all font-bold text-slate-700";
+  const inputClass = "w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl focus:bg-white focus:ring-4 focus:ring-primary/5 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300";
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-8 pb-32 animate-card">
-      {/* Header Form */}
-      <div className={`bg-white p-8 rounded-[2.5rem] border flex justify-between items-center shadow-lg transition-all ${formData.isEmergency ? 'border-rose-500 ring-8 ring-rose-500/10 shadow-rose-200' : ''}`}>
+    <form onSubmit={handleSubmit} className="max-w-7xl mx-auto space-y-8 pb-32 animate-card">
+      <div className={`bg-white p-6 rounded-[2.5rem] border flex flex-col md:flex-row justify-between items-center shadow-lg gap-6 transition-all ${formData.isEmergency ? 'border-rose-500 ring-8 ring-rose-500/10' : ''}`}>
           <div className="flex items-center gap-6">
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-all ${formData.isEmergency ? 'bg-rose-500 text-white animate-pulse' : 'bg-primary text-white'}`}>
-                  {formData.isEmergency ? <Siren size={32} /> : (formData.category === 'MCU' ? <Microscope size={32} /> : <ClipboardList size={32} />)}
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all ${formData.isEmergency ? 'bg-rose-500 text-white animate-pulse' : 'bg-primary text-white'}`}>
+                  {formData.isEmergency ? <Siren size={28} /> : (formData.category === 'MCU' ? <Microscope size={28} /> : <ClipboardList size={28} />)}
               </div>
               <div>
-                  <div className="flex items-center gap-3">
-                    <h2 className={`text-2xl font-black uppercase tracking-tighter italic ${formData.isEmergency ? 'text-rose-600' : 'text-slate-800'}`}>
-                        {formData.isEmergency ? 'ENTRY DARURAT' : (formData.category === 'MCU' ? 'PEMERIKSAAN MCU' : 'PENDAFTARAN BEROBAT')}
-                    </h2>
-                    {formData.isEmergency && <span className="px-3 py-1 bg-rose-600 text-white text-[10px] font-black rounded-lg uppercase tracking-widest">Emergency</span>}
-                  </div>
-                  <div className="flex items-center gap-4 mt-1">
-                      <p className="text-xs font-mono text-slate-400 font-bold tracking-widest uppercase">ID: {formData.mrn}</p>
-                      {initialData?.lastModifiedBy && (
-                          <div className="flex items-center gap-2 text-[9px] font-black text-primary uppercase bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
-                              <History size={12}/> Update Terakhir: {initialData.lastModifiedBy} ({initialData.lastModifiedAt})
-                          </div>
-                      )}
-                  </div>
+                  <h2 className={`text-xl font-black uppercase tracking-tighter italic ${formData.isEmergency ? 'text-rose-600' : 'text-slate-800'}`}>
+                      {formData.isEmergency ? 'MODE EMERGENCY AKTIF' : (formData.category === 'MCU' ? 'PENDAFTARAN MCU' : 'PENDAFTARAN MEDIS')}
+                  </h2>
+                  <p className="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-widest">ID KUNJUNGAN: {formData.mrn}</p>
               </div>
           </div>
-          
-          <div className="flex p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
+
+          <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-3xl border border-slate-200">
+             <button type="button" onClick={() => handleChange('isEmergency', !formData.isEmergency)} className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase transition-all flex items-center gap-2 ${formData.isEmergency ? 'bg-rose-500 text-white shadow-lg' : 'bg-white text-slate-400 hover:text-rose-500'}`}>
+                <Siren size={14}/> {formData.isEmergency ? 'DARURAT' : 'NORMAL'}
+             </button>
+             <div className="w-px h-6 bg-slate-200"></div>
              {(['Berobat', 'MCU'] as PatientCategory[]).map(cat => (
-                 <button 
-                    key={cat} 
-                    type="button" 
-                    onClick={() => handleChange('category', cat)} 
-                    className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.category === cat ? 'bg-white text-primary shadow-md' : 'text-slate-400'}`}
-                 >
+                 <button key={cat} type="button" onClick={() => handleChange('category', cat)} className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase transition-all ${formData.category === cat ? 'bg-white text-primary shadow-md' : 'text-slate-400'}`}>
                     {cat}
                  </button>
              ))}
           </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex p-1.5 bg-slate-200/50 rounded-[2rem] w-fit mx-auto border shadow-inner">
-          <button type="button" onClick={() => setActiveTab('basic')} className={`px-10 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'basic' ? 'bg-white text-primary shadow-md' : 'text-slate-500'}`}>1. Identitas & Vitals</button>
-          {formData.category === 'Berobat' ? (
-              <button type="button" onClick={() => setActiveTab('medis')} className={`px-10 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'medis' ? 'bg-white text-primary shadow-md' : 'text-slate-500'}`}>2. Data Klinis (SOAP)</button>
-          ) : (
-              <button type="button" onClick={() => setActiveTab('mcu')} className={`px-10 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'mcu' ? 'bg-white text-primary shadow-md' : 'text-slate-500'}`}>2. Pemeriksaan Fisik (MCU)</button>
-          )}
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-8">
-            {/* Tab: Identitas */}
-            {activeTab === 'basic' && (
-                <div className="space-y-8 animate-fade-in">
-                    <div className={cardClass}>
-                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><User className="text-primary" size={20}/> Informasi Personal</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="md:col-span-2">
-                                <label className={labelClass}>No. Identitas (NIK) {!formData.isEmergency && <span className="text-rose-500">*</span>}</label>
-                                <input className={inputClass} value={formData.identityNo || ''} onChange={e => handleChange('identityNo', e.target.value)} placeholder={formData.isEmergency ? "Opsional (Mode Emergency)" : "16 Digit NIK..."} />
-                            </div>
-                            <div>
-                                <label className={labelClass}>Nama Lengkap {!formData.isEmergency && <span className="text-rose-500">*</span>}</label>
-                                <input className={inputClass} value={formData.name || ''} onChange={e => handleChange('name', e.target.value)} placeholder={formData.isEmergency ? "Boleh Kosong..." : "Nama Lengkap..."} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div><label className={labelClass}>Gender</label><select className={inputClass} value={formData.gender} onChange={e => handleChange('gender', e.target.value)}><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></div>
-                                <div><label className={labelClass}>Usia (Thn)</label><input type="number" className={inputClass} value={formData.age || ''} onChange={e => handleChange('age', parseInt(e.target.value))} /></div>
-                            </div>
-                        </div>
+            <div className={cardClass}>
+                <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><User className="text-primary" size={20}/> 1. Informasi Personal</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                        <label className={labelClass}>No. Identitas (NIK) {!formData.isEmergency && <span className="text-rose-500">*</span>}</label>
+                        <input className={inputClass} value={formData.identityNo || ''} onChange={e => handleChange('identityNo', e.target.value)} placeholder={formData.isEmergency ? "Auto Bypass..." : "Masukkan 16 Digit NIK..."} />
                     </div>
-                    <div className={cardClass}>
-                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><HeartPulse className="text-rose-500" size={20}/> Tanda Vital Dasar</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                            <div><label className={labelClass}>TD (mmHg)</label><input className={inputClass} value={formData.bloodPressure || ''} onChange={e => handleChange('bloodPressure', e.target.value)} placeholder="120/80" /></div>
-                            <div><label className={labelClass}>Nadi (bpm)</label><input type="number" className={inputClass} value={formData.pulse || ''} onChange={e => handleChange('pulse', parseInt(e.target.value))} /></div>
-                            <div><label className={labelClass}>Suhu (°C)</label><input type="number" step="0.1" className={inputClass} value={formData.temperature || ''} onChange={e => handleChange('temperature', parseFloat(e.target.value))} /></div>
-                            <div><label className={labelClass}>Napas (x/m)</label><input type="number" className={inputClass} value={formData.respiration || ''} onChange={e => handleChange('respiration', parseInt(e.target.value))} /></div>
-                            <div><label className={labelClass}>Tinggi (cm)</label><input type="number" className={inputClass} value={formData.height || ''} onChange={e => handleChange('height', parseFloat(e.target.value))} /></div>
-                            <div><label className={labelClass}>Berat (kg)</label><input type="number" className={inputClass} value={formData.weight || ''} onChange={e => handleChange('weight', parseFloat(e.target.value))} /></div>
-                        </div>
+                    <div>
+                        <label className={labelClass}>Nama Lengkap {!formData.isEmergency && <span className="text-rose-500">*</span>}</label>
+                        <input className={inputClass} value={formData.name || ''} onChange={e => handleChange('name', e.target.value)} placeholder="Nama sesuai KTP..." />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><label className={labelClass}>Gender</label><select className={inputClass} value={formData.gender} onChange={e => handleChange('gender', e.target.value as 'L' | 'P')}><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></div>
+                        <div><label className={labelClass}>Usia (Thn)</label><input type="number" className={inputClass} value={formData.age || ''} onChange={e => handleChange('age', parseInt(e.target.value))} /></div>
                     </div>
                 </div>
-            )}
+            </div>
 
-            {/* Tab: Medis (Berobat Only) */}
-            {activeTab === 'medis' && formData.category === 'Berobat' && (
+            <div className={cardClass}>
+                <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><HeartPulse className="text-rose-500" size={20}/> 2. Tanda Vital</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="col-span-2"><label className={labelClass}>TD (mmHg)</label><input className={inputClass} value={formData.bloodPressure || ''} onChange={e => handleChange('bloodPressure', e.target.value)} placeholder="120/80" /></div>
+                    <div><label className={labelClass}>Nadi (bpm)</label><input type="number" className={inputClass} value={formData.pulse || ''} onChange={e => handleChange('pulse', parseInt(e.target.value))} /></div>
+                    <div><label className={labelClass}>Suhu (°C)</label><input type="number" step="0.1" className={inputClass} value={formData.temperature || ''} onChange={e => handleChange('temperature', parseFloat(e.target.value))} /></div>
+                    <div><label className={labelClass}>Resp (RR/m) <span className="text-primary font-black">*</span></label><input type="number" className={inputClass} value={formData.respiration || ''} onChange={e => handleChange('respiration', parseInt(e.target.value))} placeholder="20" /></div>
+                    <div><label className={labelClass}>Tinggi (cm)</label><input type="number" className={inputClass} value={formData.height || ''} onChange={e => handleChange('height', parseFloat(e.target.value))} /></div>
+                    <div><label className={labelClass}>Berat (kg)</label><input type="number" className={inputClass} value={formData.weight || ''} onChange={e => handleChange('weight', parseFloat(e.target.value))} /></div>
+                    <div className="bg-slate-50 p-3 rounded-2xl border flex flex-col justify-center">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">BMI / Status</label>
+                        <p className="font-black text-sm text-slate-700">{formData.bmi || 0} ({formData.bmiStatus || '-'})</p>
+                    </div>
+                </div>
+            </div>
+
+            {formData.category === 'Berobat' && (
                 <div className={`${cardClass} animate-fade-in`}>
-                    <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Stethoscope className="text-primary" size={20}/> Assessment Klinis (SOAP)</h3>
+                    <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Stethoscope className="text-primary" size={20}/> 3. Assessment Klinis (SOAP)</h3>
                     <div className="space-y-6">
-                        <div><label className={labelClass}>Subjektif (Keluhan)</label><textarea rows={3} className={inputClass} value={formData.subjective || ''} onChange={e => handleChange('subjective', e.target.value)} placeholder="Keluhan utama..." /></div>
-                        <div><label className={labelClass}>Objektif (Pemeriksaan Fisik)</label><textarea rows={3} className={inputClass} value={formData.physicalExam || ''} onChange={e => handleChange('physicalExam', e.target.value)} placeholder="Hasil observasi fisik..." /></div>
+                        <div><label className={labelClass}>Subjektif (Anamnesa)</label><textarea rows={3} className={inputClass} value={formData.subjective || ''} onChange={e => handleChange('subjective', e.target.value)} placeholder="Keluhan utama pasien..." /></div>
+                        <div><label className={labelClass}>Objektif (Pemeriksaan Fisik)</label><textarea rows={3} className={inputClass} value={formData.physicalExam || ''} onChange={e => handleChange('physicalExam', e.target.value)} placeholder="Hasil observasi visual..." /></div>
                         <div>
                             <label className={labelClass}>Assessment (Diagnosa ICD-10)</label>
                             <select className={inputClass} value={formData.diagnosisCode} onChange={e => {
@@ -205,116 +192,92 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
                                 {icd10List.map(i => <option key={i.code} value={i.code}>{i.code} - {i.name}</option>)}
                             </select>
                         </div>
-                        <div><label className={labelClass}>Plan (Therapy & Edukasi)</label><textarea rows={3} className={inputClass} value={formData.therapy || ''} onChange={e => handleChange('therapy', e.target.value)} placeholder="Tindakan medis..." /></div>
+                        <div><label className={labelClass}>Plan (Therapy & Instruksi)</label><textarea rows={3} className={inputClass} value={formData.therapy || ''} onChange={e => handleChange('therapy', e.target.value)} placeholder="Rencana pengobatan / tindakan..." /></div>
                     </div>
                 </div>
             )}
 
-            {/* Tab: MCU (MCU Only) */}
-            {activeTab === 'mcu' && formData.category === 'MCU' && (
+            {formData.category === 'MCU' && (
                 <div className="space-y-8 animate-fade-in">
-                    <div className="flex justify-between items-center bg-primary/5 p-6 rounded-[2rem] border border-primary/10">
+                    <div className="bg-primary/5 p-6 rounded-[2rem] border border-primary/10 flex justify-between items-center">
                         <div>
-                            <h4 className="font-black text-primary text-sm uppercase italic tracking-tight">Quick Fill MCU</h4>
-                            <p className="text-[10px] text-primary/60 font-bold uppercase">Mempercepat pengisian data fisik normal</p>
+                            <h4 className="font-black text-primary text-sm uppercase">Quick Fill Mode</h4>
+                            <p className="text-[10px] font-bold text-primary/60">Asumsi kondisi fisik normal untuk mempercepat pendaftaran</p>
                         </div>
-                        <button type="button" onClick={setMcuNormal} className="px-6 py-3 bg-primary text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-3">
-                           <CheckCircle2 size={16}/> Set Normal Semua
-                        </button>
+                        <button type="button" onClick={setMcuNormal} className="px-6 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Set Normal Semua</button>
                     </div>
 
                     <div className={cardClass}>
-                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Eye className="text-primary" size={20}/> Mata & Indera</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div><label className={labelClass}>Visus OD (Kanan)</label><input className={inputClass} value={formData.visusOD || ''} onChange={e => handleChange('visusOD', e.target.value)} placeholder="6/6" /></div>
-                            <div><label className={labelClass}>Visus OS (Kiri)</label><input className={inputClass} value={formData.visusOS || ''} onChange={e => handleChange('visusOS', e.target.value)} placeholder="6/6" /></div>
+                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Eye className="text-primary" size={20}/> 3. Penglihatan & THT</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label className={labelClass}>Visus OD/OS</label><div className="flex gap-2"><input className={inputClass} value={formData.visusOD || ''} onChange={e => handleChange('visusOD', e.target.value)} placeholder="Kanan" /><input className={inputClass} value={formData.visusOS || ''} onChange={e => handleChange('visusOS', e.target.value)} placeholder="Kiri" /></div></div>
                             <div><label className={labelClass}>Buta Warna</label><input className={inputClass} value={formData.colorBlind || ''} onChange={e => handleChange('colorBlind', e.target.value)} placeholder="Negatif" /></div>
-                        </div>
-                    </div>
-                    
-                    <div className={cardClass}>
-                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Ear className="text-primary" size={20}/> THT, Gigi & Mulut</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div><label className={labelClass}>Telinga (Kanan/Kiri)</label><input className={inputClass} value={formData.rightEar || ''} onChange={e => handleChange('rightEar', e.target.value)} placeholder="Normal" /></div>
-                            <div><label className={labelClass}>Hidung & Sinus</label><input className={inputClass} value={formData.nose || ''} onChange={e => handleChange('nose', e.target.value)} placeholder="Normal" /></div>
-                            <div><label className={labelClass}>Gigi & Mulut</label><input className={inputClass} value={formData.teeth || ''} onChange={e => handleChange('teeth', e.target.value)} placeholder="Karies (-)" /></div>
-                            <div><label className={labelClass}>Tenggorokan & Tonsil</label><input className={inputClass} value={formData.tonsil || ''} onChange={e => handleChange('tonsil', e.target.value)} placeholder="Tenang" /></div>
+                            <div><label className={labelClass}>Telinga R/L</label><div className="flex gap-2"><input className={inputClass} value={formData.rightEar || ''} onChange={e => handleChange('rightEar', e.target.value)} placeholder="Kanan" /><input className={inputClass} value={formData.leftEar || ''} onChange={e => handleChange('leftEar', e.target.value)} placeholder="Kiri" /></div></div>
+                            <div><label className={labelClass}>Hidung & Gigi</label><div className="flex gap-2"><input className={inputClass} value={formData.nose || ''} onChange={e => handleChange('nose', e.target.value)} placeholder="Hidung" /><input className={inputClass} value={formData.teeth || ''} onChange={e => handleChange('teeth', e.target.value)} placeholder="Gigi & Mulut" /></div></div>
                         </div>
                     </div>
 
                     <div className={cardClass}>
-                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Activity className="text-rose-500" size={20}/> Sistem Thorax & Saraf</h3>
+                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Wind className="text-primary" size={20}/> 4. Thorax & Abdomen</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="md:col-span-2"><label className={labelClass}>Thorax (Cor & Pulmo)</label><textarea rows={2} className={inputClass} value={formData.thorax || ''} onChange={e => handleChange('thorax', e.target.value)} placeholder="Normal" /></div>
-                            <div><label className={labelClass}>Refleks Pupil</label><input className={inputClass} value={formData.reflexPupil || ''} onChange={e => handleChange('reflexPupil', e.target.value)} placeholder="(+) Normal" /></div>
-                            <div><label className={labelClass}>Refleks Patella</label><input className={inputClass} value={formData.reflexPatella || ''} onChange={e => handleChange('reflexPatella', e.target.value)} placeholder="(+) Normal" /></div>
+                            <div><label className={labelClass}>Tonsil & Tenggorokan</label><input className={inputClass} value={formData.tonsil || ''} onChange={e => handleChange('tonsil', e.target.value)} /></div>
+                            <div><label className={labelClass}>Thorax (Jantung/Paru)</label><input className={inputClass} value={formData.thorax || ''} onChange={e => handleChange('thorax', e.target.value)} /></div>
+                            <div><label className={labelClass}>Abdomen</label><input className={inputClass} value={formData.abdomen || ''} onChange={e => handleChange('abdomen', e.target.value)} /></div>
+                            <div><label className={labelClass}>Hernia</label><input className={inputClass} value={formData.hernia || ''} onChange={e => handleChange('hernia', e.target.value)} /></div>
                         </div>
-                        <div className="mt-8">
-                            <label className={labelClass}>Kesimpulan & Rekomendasi Akhir MCU</label>
-                            <textarea rows={4} className={inputClass} value={formData.mcuConclusion || ''} onChange={e => handleChange('mcuConclusion', e.target.value)} placeholder="Misal: FIT FOR WORK / SEHAT..." />
+                    </div>
+
+                    <div className={cardClass}>
+                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Footprints className="text-primary" size={20}/> 5. Ekstremitas & Neurologi</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label className={labelClass}>Hemoroid & Varicose</label><div className="flex gap-2"><input className={inputClass} value={formData.hemorrhoids || ''} onChange={e => handleChange('hemorrhoids', e.target.value)} placeholder="Hemoroid" /><input className={inputClass} value={formData.varicose || ''} onChange={e => handleChange('varicose', e.target.value)} placeholder="Varicose" /></div></div>
+                            <div><label className={labelClass}>Deformitas Ekstremitas</label><input className={inputClass} value={formData.extremityDeformity || ''} onChange={e => handleChange('extremityDeformity', e.target.value)} /></div>
+                            <div><label className={labelClass}>Refleks Pupil</label><input className={inputClass} value={formData.reflexPupil || ''} onChange={e => handleChange('reflexPupil', e.target.value)} /></div>
+                            <div><label className={labelClass}>Patella & Achilles</label><div className="flex gap-2"><input className={inputClass} value={formData.reflexPatella || ''} onChange={e => handleChange('reflexPatella', e.target.value)} placeholder="Patella" /><input className={inputClass} value={formData.reflexAchilles || ''} onChange={e => handleChange('reflexAchilles', e.target.value)} placeholder="Achilles" /></div></div>
                         </div>
+                    </div>
+
+                    <div className={cardClass}>
+                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Microscope className="text-primary" size={20}/> 6. Penunjang (Rontgen, EKG, Lab)</h3>
+                        <div className="space-y-6">
+                            <div><label className={labelClass}>Hasil Rontgen Thorax</label><input className={inputClass} value={formData.rontgen || ''} onChange={e => handleChange('rontgen', e.target.value)} placeholder="Misal: Cor & Pulmo Normal" /></div>
+                            <div><label className={labelClass}>Hasil EKG (Jantung)</label><input className={inputClass} value={formData.ekg || ''} onChange={e => handleChange('ekg', e.target.value)} placeholder="Misal: Sinus Rhythm" /></div>
+                            <div><label className={labelClass}>Hasil Laboratorium</label><textarea rows={3} className={inputClass} value={formData.laboratory || ''} onChange={e => handleChange('laboratory', e.target.value)} placeholder="Hasil DL, Urin, Kimia Darah..." /></div>
+                        </div>
+                    </div>
+
+                    <div className={cardClass}>
+                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Calculator className="text-primary" size={20}/> 7. Kesimpulan Akhir</h3>
+                        <textarea rows={4} className={inputClass} value={formData.mcuConclusion || ''} onChange={e => handleChange('mcuConclusion', e.target.value)} placeholder="Tuliskan hasil akhir kesehatan secara menyeluruh..." />
                     </div>
                 </div>
             )}
         </div>
 
-        {/* Sidebar */}
         <div className="lg:col-span-4 space-y-6">
-            <div className={`${cardClass} bg-slate-900 border-slate-800 text-white shadow-2xl`}>
-                <div className="flex items-center gap-3 mb-6">
-                   <div className="p-3 bg-white/10 rounded-2xl text-primary"><UserCheck size={20}/></div>
-                   <div>
-                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-tight">Informasi Audit</p>
-                       <h4 className="font-black uppercase text-sm tracking-tighter italic">Jejak Pembaruan</h4>
-                   </div>
-                </div>
-                <div className="space-y-4">
-                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                        <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Editor Terakhir</p>
-                        <p className="text-sm font-black text-white">{initialData?.lastModifiedBy || user?.name || 'Petugas Aktif'}</p>
-                    </div>
-                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                        <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Waktu Modifikasi</p>
-                        <p className="text-sm font-black text-white">{initialData?.lastModifiedAt || new Date().toLocaleString()}</p>
-                    </div>
-                    {initialData && (
-                        <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-2xl border border-primary/20 text-primary">
-                            <ShieldAlert size={16} />
-                            <p className="text-[9px] font-black uppercase leading-tight">Data ini merupakan salinan permanen dari database pusat.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            <div className={`${cardClass} bg-rose-50/40 border-rose-100`}>
-                <label className="text-[11px] font-black text-rose-500 uppercase tracking-widest mb-4 block flex items-center gap-2"><Siren size={14}/> GAWAT DARURAT (EMERGENCY)</label>
-                <div className="bg-white p-5 rounded-3xl border border-rose-200 flex items-center justify-between shadow-sm">
-                    <span className="text-xs font-black text-slate-600 uppercase tracking-tight">Mode Quick Entry?</span>
-                    <button type="button" onClick={() => handleChange('isEmergency', !formData.isEmergency)} className={`w-16 h-8 rounded-full transition-all relative ${formData.isEmergency ? 'bg-rose-500' : 'bg-slate-200'}`}>
-                        <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all ${formData.isEmergency ? 'left-9' : 'left-1'}`} />
-                    </button>
-                </div>
-            </div>
-
             <div className={cardClass}>
-                <label className={labelClass}>Operasional</label>
-                <div className="space-y-4">
+                <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <Zap size={14} className="text-amber-500"/> Parameter Operasional
+                </h4>
+                <div className="space-y-5">
                     <div>
-                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-1 block">Pilih Event/Kegiatan</label>
+                        <label className={labelClass}>Kegiatan/Event</label>
                         <select required className={inputClass} value={formData.activityId || ''} onChange={e => handleChange('activityId', e.target.value)}>
-                            <option value="">-- Pilih Kegiatan --</option>
+                            <option value="">-- Pilih Event --</option>
                             {activities.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                         </select>
                     </div>
-                    <div><label className="text-[9px] font-bold text-slate-400 uppercase mb-1 block">Triage Level</label>
-                        <div className="grid grid-cols-3 gap-2 mt-2">
+                    <div>
+                        <label className={labelClass}>Triage Level</label>
+                        <div className="grid grid-cols-3 gap-2">
                            {(['Red', 'Yellow', 'Green'] as TriageLevel[]).map(t => (
                                <button key={t} type="button" onClick={() => handleChange('triage', t)} className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all ${formData.triage === t ? (t === 'Red' ? 'bg-rose-500 text-white shadow-lg' : t === 'Yellow' ? 'bg-amber-400 text-white shadow-lg' : 'bg-emerald-500 text-white shadow-lg') : 'bg-slate-100 text-slate-400'}`}>{t}</button>
                            ))}
                         </div>
                     </div>
-                    <div><label className="text-[9px] font-bold text-slate-400 uppercase mb-1 block">Status Akhir</label>
-                        <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div>
+                        <label className={labelClass}>Status Akhir</label>
+                        <div className="grid grid-cols-2 gap-2">
                             {(['Selesai', 'Rujuk'] as ReferralStatus[]).map(s => (
                                 <button key={s} type="button" onClick={() => handleChange('referralStatus', s)} className={`py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${formData.referralStatus === s ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-slate-400 border-slate-100'}`}>{s}</button>
                             ))}
@@ -322,13 +285,29 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
                     </div>
                 </div>
             </div>
+
+            <div className={`${cardClass} bg-slate-900 border-slate-800 text-white shadow-2xl`}>
+                <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <UserCheck size={14} className="text-primary"/> Audit Trail
+                </h4>
+                <div className="space-y-4">
+                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <p className="text-[9px] font-black text-slate-500 uppercase mb-1 flex items-center gap-2"><User size={10}/> Petugas Terakhir</p>
+                        <p className="text-xs font-black text-white">{initialData?.lastModifiedBy || user?.name || 'Sistem'}</p>
+                    </div>
+                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <p className="text-[9px] font-black text-slate-500 uppercase mb-1 flex items-center gap-2"><Clock size={10}/> Update Terakhir</p>
+                        <p className="text-xs font-black text-white">{initialData?.lastModifiedAt || new Date().toLocaleString()}</p>
+                    </div>
+                </div>
+            </div>
         </div>
       </div>
 
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[92%] max-w-5xl bg-slate-900/95 backdrop-blur-xl p-6 rounded-[3rem] flex justify-between items-center z-50 shadow-2xl border border-white/10">
-          <button type="button" onClick={onCancel} className="px-10 text-white/40 font-black uppercase text-[11px] tracking-widest hover:text-white transition">Batal</button>
-          <button type="submit" className={`px-16 py-4 rounded-[2rem] font-black uppercase text-[11px] tracking-[0.25em] shadow-xl transition-all active:scale-95 flex items-center gap-4 ${formData.isEmergency ? 'bg-rose-600 text-white hover:bg-rose-500 shadow-rose-900/40' : 'bg-primary text-white hover:bg-primary-light shadow-primary/40'}`}>
-             <Save size={20}/> SIMPAN REKAMAN
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl bg-slate-950/90 backdrop-blur-xl p-5 rounded-[2.5rem] flex justify-between items-center z-50 shadow-2xl border border-white/10 no-print">
+          <button type="button" onClick={onCancel} className="px-8 text-white/40 font-black uppercase text-[10px] tracking-widest hover:text-white transition">Batal</button>
+          <button type="submit" className={`px-12 py-4 rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl transition-all active:scale-95 flex items-center gap-4 ${formData.isEmergency ? 'bg-rose-600 text-white hover:bg-rose-500' : 'bg-primary text-white hover:bg-primary-light'}`}>
+             <Save size={18}/> {initialData?.id ? 'PERBARUI DATA' : 'SIMPAN REGISTRASI'}
           </button>
       </div>
     </form>

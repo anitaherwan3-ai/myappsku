@@ -75,7 +75,7 @@ export interface Patient {
   visitDate: string;
   category: PatientCategory;
   triage: TriageLevel;
-  isEmergency?: boolean; // Menandai situasi emergency
+  isEmergency?: boolean;
   height: number; 
   weight: number; 
   bloodPressure: string;
@@ -106,6 +106,9 @@ export interface Patient {
   reflexPupil?: string;
   reflexPatella?: string;
   reflexAchilles?: string;
+  rontgen?: string;
+  ekg?: string;
+  laboratory?: string;
   mcuConclusion?: string;
   referralStatus?: ReferralStatus;
 }

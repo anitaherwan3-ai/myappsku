@@ -1,5 +1,5 @@
 
-import React, { useState, ErrorInfo, ReactNode } from 'react';
+import React, { useState, ErrorInfo, ReactNode, Component } from 'react';
 import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import LandingPage from './components/LandingPage';
 import DashboardLayout from './components/DashboardLayout';
@@ -13,15 +13,35 @@ import {
     ManagePatients, ManageICD10, ManageCarousel 
 } from './components/DashboardViews';
 
+// Fix: Make children optional to avoid property missing error in JSX usage.
 interface ErrorBoundaryProps { children?: ReactNode; }
 interface ErrorBoundaryState { hasError: boolean; error: Error | null; }
 
+/**
+ * Correctly typed ErrorBoundary class component to handle properties and state.
+ */
+/* Fix: Explicitly use React.Component to ensure inherited 'props' property is recognized by the compiler. */
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { hasError: false, error: null };
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState { return { hasError: true, error }; }
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error(error, errorInfo); }
+  // Explicitly initialize state property
+  public state: ErrorBoundaryState = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState { 
+    return { hasError: true, error }; 
+  }
+  
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) { 
+    console.error(error, errorInfo); 
+  }
+  
   render() {
-    if (this.state.hasError) return <div className="p-20 text-center font-black">Aplikasi Mengalami Kendala: {this.state.error?.toString()}</div>;
+    if (this.state.hasError) {
+      return (
+        <div className="p-20 text-center font-black text-slate-800">
+          Aplikasi Mengalami Kendala: {this.state.error?.toString()}
+        </div>
+      );
+    }
+    /* Fix: 'this.props' is now reliably available through React.Component inheritance. */
     return this.props.children;
   }
 }
@@ -68,7 +88,8 @@ const Login = () => {
   );
 };
 
-const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allowedRoles?: string[] }) => {
+// Fixed ProtectedRoute to correctly type children.
+const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
     const { user } = useApp();
     if (!user) return <Navigate to="/login" />;
     if (allowedRoles && !allowedRoles.includes(user.role)) return <div className="p-20 text-center font-black">Akses Dibatasi.</div>;
@@ -83,7 +104,7 @@ const App = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/news/:id" element={<NewsDetail />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route path="/dashboard" element={<ProtectedRoute children={<DashboardLayout />} />}>
               <Route index element={<DashboardSummary />} />
               <Route path="logs" element={<DailyLog />} />
               <Route path="icd10" element={<ManageICD10 />} />
@@ -91,10 +112,10 @@ const App = () => {
               <Route path="patients/add" element={<ManagePatients mode="add" />} />
               <Route path="patients/map" element={<PatientMap />} />
               <Route path="medical-records" element={<ManagePatients mode="record" />} />
-              <Route path="activities" element={<ProtectedRoute allowedRoles={['admin']}><ManageActivities /></ProtectedRoute>} />
-              <Route path="officers" element={<ProtectedRoute allowedRoles={['admin']}><ManageOfficers /></ProtectedRoute>} />
-              <Route path="news" element={<ProtectedRoute allowedRoles={['admin']}><ManageNews /></ProtectedRoute>} />
-              <Route path="carousel" element={<ProtectedRoute allowedRoles={['admin']}><ManageCarousel /></ProtectedRoute>} />
+              <Route path="activities" element={<ProtectedRoute allowedRoles={['admin']} children={<ManageActivities />} />} />
+              <Route path="officers" element={<ProtectedRoute allowedRoles={['admin']} children={<ManageOfficers />} />} />
+              <Route path="news" element={<ProtectedRoute allowedRoles={['admin']} children={<ManageNews />} />} />
+              <Route path="carousel" element={<ProtectedRoute allowedRoles={['admin']} children={<ManageCarousel />} />} />
           </Route>
         </Routes>
       </HashRouter>
