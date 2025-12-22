@@ -32,17 +32,9 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-      * {
-        font-family: 'Inter', sans-serif !important;
-        -webkit-font-smoothing: antialiased;
-      }
+      * { font-family: 'Inter', sans-serif !important; -webkit-font-smoothing: antialiased; }
       body { background-color: #f8fafc; color: #1e293b; }
-      
-      input, select, textarea {
-        font-family: 'Inter', sans-serif !important;
-        outline: none;
-      }
-
+      input, select, textarea { font-family: 'Inter', sans-serif !important; outline: none; }
       .custom-scrollbar::-webkit-scrollbar { width: 5px; }
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -50,87 +42,28 @@
       @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       .animate-card { animation: fadeIn 0.4s ease-out forwards; }
       
-      /* PRINT SYSTEM FIXED & BEAUTIFIED */
       @media print {
-        @page { 
-          size: A4; 
-          margin: 1.5cm; 
-        }
+        @page { size: A4; margin: 1.5cm; }
+        body, html { height: auto !important; overflow: visible !important; background: white !important; font-size: 11pt; }
+        #root, main, .overflow-y-auto, .flex-1 { height: auto !important; overflow: visible !important; display: block !important; position: static !important; padding: 0 !important; margin: 0 !important; }
         
-        body, html {
-          height: auto !important;
-          overflow: visible !important;
-          background: white !important;
-          color: black !important;
-          font-size: 11pt;
-        }
-
-        #root, main, .overflow-y-auto, .flex-1, .h-screen {
-          height: auto !important;
-          overflow: visible !important;
-          position: static !important;
-          display: block !important;
-          background: transparent !important;
-          padding: 0 !important;
-          margin: 0 !important;
-        }
-
-        /* Sembunyikan semua elemen UI kecuali konten cetak */
-        .no-print, nav, aside, button, header, .floating-action-bar, .no-print *, 
-        input, select, .pagination-controls, .search-bar, .modal-header-buttons, .dashboard-table-container { 
+        .no-print, nav, aside, button, header, .floating-action-bar, input, select, .pagination-controls, .search-bar, .dashboard-table-container { 
           display: none !important; 
-          visibility: hidden !important; 
         }
         
-        /* Layout per-halaman untuk Cetak Laporan Resume (Bulk) */
-        .bulk-resume-item {
-            page-break-after: always;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 2cm;
-            margin-bottom: 2cm;
-            display: block;
-        }
-        .bulk-resume-item:last-child {
-            page-break-after: auto;
-            border-bottom: none;
-        }
+        .bulk-resume-item { page-break-after: always; border-bottom: 2pt solid #eee; padding-bottom: 2cm; margin-bottom: 2cm; display: block; }
+        .bulk-resume-item:last-child { page-break-after: auto; border-bottom: none; }
         
-        /* Styling Tabel Laporan Registry */
-        .print-summary-table {
-          width: 100% !important; 
-          border-collapse: collapse !important; 
-          margin-top: 1cm;
-          font-size: 10pt !important;
-        }
-        .print-summary-table th, .print-summary-table td { 
-          border: 1pt solid #444 !important; 
-          padding: 8pt !important; 
-          text-align: left;
-        }
-        .print-summary-table th {
-            background-color: #f3f4f6 !important;
-            -webkit-print-color-adjust: exact;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
-        /* Formal Letterhead (Kop Surat) */
-        .print-header-letterhead {
-            display: flex !important;
-            flex-direction: column;
-            text-align: center;
-            margin-bottom: 1.5cm;
-            border-bottom: 4pt double black;
-            padding-bottom: 15pt;
-        }
+        .print-summary-table { width: 100% !important; border-collapse: collapse !important; margin-top: 1cm; }
+        .print-summary-table th, .print-summary-table td { border: 1pt solid #444 !important; padding: 8pt !important; text-align: left; }
+        .print-summary-table th { background-color: #f3f4f6 !important; font-weight: bold; text-transform: uppercase; font-size: 9pt; }
+        .print-summary-table td { font-size: 10pt; }
+
+        .print-header-letterhead { display: flex !important; flex-direction: column; text-align: center; margin-bottom: 1.5cm; border-bottom: 4pt double black; padding-bottom: 15pt; }
         .print-header-letterhead h1 { font-size: 20pt; font-weight: 900; margin: 0; text-transform: uppercase; }
-        .print-header-letterhead h2 { font-size: 12pt; font-weight: 700; margin: 5pt 0; color: #333; }
-        .print-header-letterhead p { font-size: 9pt; color: #666; font-weight: 500; }
-
-        .print-only { display: block !important; visibility: visible !important; }
-        .emergency-pulse { animation: none !important; box-shadow: none !important; border: 2pt solid red !important; }
+        .print-header-letterhead h2 { font-size: 12pt; font-weight: 700; margin: 5pt 0; }
+        .print-header-letterhead p { font-size: 9pt; color: #666; }
       }
-
       .emergency-pulse { animation: pulse-red 2s infinite; }
       @keyframes pulse-red {
         0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
@@ -141,15 +74,15 @@
   <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
     "vite": "https://esm.sh/vite@^7.3.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "axios": "https://esm.sh/axios@^1.13.2",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0",
     "xlsx": "https://esm.sh/xlsx@^0.18.5"
   }
 }
