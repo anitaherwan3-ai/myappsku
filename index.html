@@ -50,11 +50,11 @@
       @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       .animate-card { animation: fadeIn 0.4s ease-out forwards; }
       
-      /* PRINT SYSTEM FIXED */
+      /* PRINT SYSTEM FIXED & BEAUTIFIED */
       @media print {
         @page { 
           size: A4; 
-          margin: 1cm; 
+          margin: 1.5cm; 
         }
         
         body, html {
@@ -62,6 +62,7 @@
           overflow: visible !important;
           background: white !important;
           color: black !important;
+          font-size: 11pt;
         }
 
         #root, main, .overflow-y-auto, .flex-1, .h-screen {
@@ -69,38 +70,65 @@
           overflow: visible !important;
           position: static !important;
           display: block !important;
+          background: transparent !important;
+          padding: 0 !important;
+          margin: 0 !important;
         }
 
-        .no-print, nav, aside, button, header, .floating-action-bar, .no-print * { 
+        /* Sembunyikan semua elemen UI kecuali konten cetak */
+        .no-print, nav, aside, button, header, .floating-action-bar, .no-print *, 
+        input, select, .pagination-controls, .search-bar, .modal-header-buttons, .dashboard-table-container { 
           display: none !important; 
           visibility: hidden !important; 
         }
         
-        #printable-resume {
-          visibility: visible !important;
-          display: block !important;
-          width: 100% !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          background: white !important;
+        /* Layout per-halaman untuk Cetak Laporan Resume (Bulk) */
+        .bulk-resume-item {
+            page-break-after: always;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 2cm;
+            margin-bottom: 2cm;
+            display: block;
+        }
+        .bulk-resume-item:last-child {
+            page-break-after: auto;
+            border-bottom: none;
         }
         
-        /* Ensure tables are visible during general print */
-        table { 
+        /* Styling Tabel Laporan Registry */
+        .print-summary-table {
           width: 100% !important; 
           border-collapse: collapse !important; 
-          margin-bottom: 2rem !important;
+          margin-top: 1cm;
+          font-size: 10pt !important;
         }
-        th, td { 
-          border: 1px solid #ddd !important; 
-          padding: 8px !important; 
-          font-size: 10px !important; 
-          color: black !important;
-          background: white !important;
+        .print-summary-table th, .print-summary-table td { 
+          border: 1pt solid #444 !important; 
+          padding: 8pt !important; 
+          text-align: left;
+        }
+        .print-summary-table th {
+            background-color: #f3f4f6 !important;
+            -webkit-print-color-adjust: exact;
+            font-weight: bold;
+            text-transform: uppercase;
         }
         
+        /* Formal Letterhead (Kop Surat) */
+        .print-header-letterhead {
+            display: flex !important;
+            flex-direction: column;
+            text-align: center;
+            margin-bottom: 1.5cm;
+            border-bottom: 4pt double black;
+            padding-bottom: 15pt;
+        }
+        .print-header-letterhead h1 { font-size: 20pt; font-weight: 900; margin: 0; text-transform: uppercase; }
+        .print-header-letterhead h2 { font-size: 12pt; font-weight: 700; margin: 5pt 0; color: #333; }
+        .print-header-letterhead p { font-size: 9pt; color: #666; font-weight: 500; }
+
         .print-only { display: block !important; visibility: visible !important; }
-        .emergency-pulse { animation: none !important; box-shadow: none !important; border: 2px solid red !important; }
+        .emergency-pulse { animation: none !important; box-shadow: none !important; border: 2pt solid red !important; }
       }
 
       .emergency-pulse { animation: pulse-red 2s infinite; }
