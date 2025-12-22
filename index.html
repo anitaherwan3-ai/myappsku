@@ -43,13 +43,6 @@
         outline: none;
       }
 
-      .dark-input-group input {
-        color: white !important;
-      }
-      .dark-input-group input::placeholder {
-        color: rgba(255,255,255,0.3) !important;
-      }
-
       .custom-scrollbar::-webkit-scrollbar { width: 5px; }
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -57,28 +50,65 @@
       @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       .animate-card { animation: fadeIn 0.4s ease-out forwards; }
       
-      /* Print Styles */
+      /* PRINT SYSTEM FIXED */
       @media print {
-        body * { visibility: hidden; }
-        #printable-resume, #printable-resume * { visibility: visible; }
+        @page { 
+          size: A4; 
+          margin: 1cm; 
+        }
+        
+        body, html {
+          height: auto !important;
+          overflow: visible !important;
+          background: white !important;
+          color: black !important;
+        }
+
+        #root, main, .overflow-y-auto, .flex-1, .h-screen {
+          height: auto !important;
+          overflow: visible !important;
+          position: static !important;
+          display: block !important;
+        }
+
+        .no-print, nav, aside, button, header, .floating-action-bar, .no-print * { 
+          display: none !important; 
+          visibility: hidden !important; 
+        }
+        
         #printable-resume {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          padding: 0;
-          margin: 0;
+          visibility: visible !important;
+          display: block !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
           background: white !important;
         }
-        .no-print { display: none !important; }
+        
+        /* Ensure tables are visible during general print */
+        table { 
+          width: 100% !important; 
+          border-collapse: collapse !important; 
+          margin-bottom: 2rem !important;
+        }
+        th, td { 
+          border: 1px solid #ddd !important; 
+          padding: 8px !important; 
+          font-size: 10px !important; 
+          color: black !important;
+          background: white !important;
+        }
+        
+        .print-only { display: block !important; visibility: visible !important; }
+        .emergency-pulse { animation: none !important; box-shadow: none !important; border: 2px solid red !important; }
       }
 
+      .emergency-pulse { animation: pulse-red 2s infinite; }
       @keyframes pulse-red {
         0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
         70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
         100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
       }
-      .emergency-pulse { animation: pulse-red 2s infinite; }
     </style>
   <script type="importmap">
 {

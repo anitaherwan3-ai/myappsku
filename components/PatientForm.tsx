@@ -27,6 +27,7 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
     referralStatus: 'Selesai'
   });
 
+  // Otomatis hitung BMI
   useEffect(() => {
     if (formData.height && formData.weight && formData.height > 0) {
       const h = formData.height / 100;
@@ -43,6 +44,7 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // FIX QUICK FILL MODE
   const setMcuNormal = () => {
     if (window.confirm("Isi semua hasil pemeriksaan fisik dengan status 'Normal'?")) {
       const normalData: Partial<Patient> = {
@@ -70,9 +72,11 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
         rontgen: 'Cor & Pulmo dalam batas normal',
         ekg: 'Sinus Rhythm',
         laboratory: 'Darah Rutin & Urin Rutin dalam batas normal',
-        mcuConclusion: 'SEHAT / FIT FOR WORK'
+        mcuConclusion: 'SEHAT / FIT FOR WORK',
+        referralStatus: 'Selesai'
       };
       
+      // Force state update to all normal fields
       setFormData(prev => ({
         ...prev,
         ...normalData
@@ -114,6 +118,7 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-7xl mx-auto space-y-8 pb-32 animate-card">
+      {/* HEADER REGISTRASI */}
       <div className={`bg-white p-6 rounded-[2.5rem] border flex flex-col md:flex-row justify-between items-center shadow-lg gap-6 transition-all ${formData.isEmergency ? 'border-rose-500 ring-8 ring-rose-500/10' : ''}`}>
           <div className="flex items-center gap-6">
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all ${formData.isEmergency ? 'bg-rose-500 text-white animate-pulse' : 'bg-primary text-white'}`}>
@@ -141,7 +146,9 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* KOLOM KIRI: FORM UTAMA */}
         <div className="lg:col-span-8 space-y-8">
+            {/* 1. BIODATA */}
             <div className={cardClass}>
                 <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><User className="text-primary" size={20}/> 1. Informasi Personal</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -160,6 +167,7 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
                 </div>
             </div>
 
+            {/* 2. VITAL SIGNS */}
             <div className={cardClass}>
                 <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><HeartPulse className="text-rose-500" size={20}/> 2. Tanda Vital</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -176,6 +184,7 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
                 </div>
             </div>
 
+            {/* 3. SOAP (Kategori Berobat) */}
             {formData.category === 'Berobat' && (
                 <div className={`${cardClass} animate-fade-in`}>
                     <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Stethoscope className="text-primary" size={20}/> 3. Assessment Klinis (SOAP)</h3>
@@ -197,48 +206,42 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
                 </div>
             )}
 
+            {/* 4. MCU DATA (Kategori MCU) */}
             {formData.category === 'MCU' && (
                 <div className="space-y-8 animate-fade-in">
-                    <div className="bg-primary/5 p-6 rounded-[2rem] border border-primary/10 flex justify-between items-center">
+                    {/* QUICK FILL BUTTON */}
+                    <div className="bg-primary/5 p-6 rounded-[2rem] border border-primary/10 flex justify-between items-center no-print">
                         <div>
                             <h4 className="font-black text-primary text-sm uppercase">Quick Fill Mode</h4>
-                            <p className="text-[10px] font-bold text-primary/60">Asumsi kondisi fisik normal untuk mempercepat pendaftaran</p>
+                            <p className="text-[10px] font-bold text-primary/60">Isi otomatis hasil fisik sebagai "Normal"</p>
                         </div>
                         <button type="button" onClick={setMcuNormal} className="px-6 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Set Normal Semua</button>
                     </div>
 
+                    {/* FISIK MCU */}
                     <div className={cardClass}>
                         <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Eye className="text-primary" size={20}/> 3. Penglihatan & THT</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div><label className={labelClass}>Visus OD/OS</label><div className="flex gap-2"><input className={inputClass} value={formData.visusOD || ''} onChange={e => handleChange('visusOD', e.target.value)} placeholder="Kanan" /><input className={inputClass} value={formData.visusOS || ''} onChange={e => handleChange('visusOS', e.target.value)} placeholder="Kiri" /></div></div>
                             <div><label className={labelClass}>Buta Warna</label><input className={inputClass} value={formData.colorBlind || ''} onChange={e => handleChange('colorBlind', e.target.value)} placeholder="Negatif" /></div>
-                            <div><label className={labelClass}>Telinga R/L</label><div className="flex gap-2"><input className={inputClass} value={formData.rightEar || ''} onChange={e => handleChange('rightEar', e.target.value)} placeholder="Kanan" /><input className={inputClass} value={formData.leftEar || ''} onChange={e => handleChange('leftEar', e.target.value)} placeholder="Kiri" /></div></div>
                             <div><label className={labelClass}>Hidung & Gigi</label><div className="flex gap-2"><input className={inputClass} value={formData.nose || ''} onChange={e => handleChange('nose', e.target.value)} placeholder="Hidung" /><input className={inputClass} value={formData.teeth || ''} onChange={e => handleChange('teeth', e.target.value)} placeholder="Gigi & Mulut" /></div></div>
+                            <div><label className={labelClass}>Tonsil & Tenggorokan</label><input className={inputClass} value={formData.tonsil || ''} onChange={e => handleChange('tonsil', e.target.value)} placeholder="Normal" /></div>
                         </div>
                     </div>
 
                     <div className={cardClass}>
                         <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Wind className="text-primary" size={20}/> 4. Thorax & Abdomen</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div><label className={labelClass}>Tonsil & Tenggorokan</label><input className={inputClass} value={formData.tonsil || ''} onChange={e => handleChange('tonsil', e.target.value)} /></div>
-                            <div><label className={labelClass}>Thorax (Jantung/Paru)</label><input className={inputClass} value={formData.thorax || ''} onChange={e => handleChange('thorax', e.target.value)} /></div>
-                            <div><label className={labelClass}>Abdomen</label><input className={inputClass} value={formData.abdomen || ''} onChange={e => handleChange('abdomen', e.target.value)} /></div>
-                            <div><label className={labelClass}>Hernia</label><input className={inputClass} value={formData.hernia || ''} onChange={e => handleChange('hernia', e.target.value)} /></div>
+                            <div><label className={labelClass}>Thorax (Jantung/Paru)</label><input className={inputClass} value={formData.thorax || ''} onChange={e => handleChange('thorax', e.target.value)} placeholder="Normal" /></div>
+                            <div><label className={labelClass}>Abdomen</label><input className={inputClass} value={formData.abdomen || ''} onChange={e => handleChange('abdomen', e.target.value)} placeholder="Normal" /></div>
+                            <div><label className={labelClass}>Hernia & Varicose</label><div className="flex gap-2"><input className={inputClass} value={formData.hernia || ''} onChange={e => handleChange('hernia', e.target.value)} placeholder="Hernia" /><input className={inputClass} value={formData.varicose || ''} onChange={e => handleChange('varicose', e.target.value)} placeholder="Varicose" /></div></div>
+                            <div><label className={labelClass}>Hemoroid</label><input className={inputClass} value={formData.hemorrhoids || ''} onChange={e => handleChange('hemorrhoids', e.target.value)} placeholder="(-) Tidak Ada" /></div>
                         </div>
                     </div>
 
+                    {/* PARAKLINIS & PENUNJANG */}
                     <div className={cardClass}>
-                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Footprints className="text-primary" size={20}/> 5. Ekstremitas & Neurologi</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div><label className={labelClass}>Hemoroid & Varicose</label><div className="flex gap-2"><input className={inputClass} value={formData.hemorrhoids || ''} onChange={e => handleChange('hemorrhoids', e.target.value)} placeholder="Hemoroid" /><input className={inputClass} value={formData.varicose || ''} onChange={e => handleChange('varicose', e.target.value)} placeholder="Varicose" /></div></div>
-                            <div><label className={labelClass}>Deformitas Ekstremitas</label><input className={inputClass} value={formData.extremityDeformity || ''} onChange={e => handleChange('extremityDeformity', e.target.value)} /></div>
-                            <div><label className={labelClass}>Refleks Pupil</label><input className={inputClass} value={formData.reflexPupil || ''} onChange={e => handleChange('reflexPupil', e.target.value)} /></div>
-                            <div><label className={labelClass}>Patella & Achilles</label><div className="flex gap-2"><input className={inputClass} value={formData.reflexPatella || ''} onChange={e => handleChange('reflexPatella', e.target.value)} placeholder="Patella" /><input className={inputClass} value={formData.reflexAchilles || ''} onChange={e => handleChange('reflexAchilles', e.target.value)} placeholder="Achilles" /></div></div>
-                        </div>
-                    </div>
-
-                    <div className={cardClass}>
-                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Microscope className="text-primary" size={20}/> 6. Penunjang (Rontgen, EKG, Lab)</h3>
+                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Microscope className="text-primary" size={20}/> 5. Pemeriksaan Penunjang</h3>
                         <div className="space-y-6">
                             <div><label className={labelClass}>Hasil Rontgen Thorax</label><input className={inputClass} value={formData.rontgen || ''} onChange={e => handleChange('rontgen', e.target.value)} placeholder="Misal: Cor & Pulmo Normal" /></div>
                             <div><label className={labelClass}>Hasil EKG (Jantung)</label><input className={inputClass} value={formData.ekg || ''} onChange={e => handleChange('ekg', e.target.value)} placeholder="Misal: Sinus Rhythm" /></div>
@@ -247,14 +250,15 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
                     </div>
 
                     <div className={cardClass}>
-                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Calculator className="text-primary" size={20}/> 7. Kesimpulan Akhir</h3>
+                        <h3 className="font-black text-slate-800 text-lg uppercase flex items-center gap-3 mb-8 italic tracking-tighter"><Calculator className="text-primary" size={20}/> 6. Kesimpulan Akhir</h3>
                         <textarea rows={4} className={inputClass} value={formData.mcuConclusion || ''} onChange={e => handleChange('mcuConclusion', e.target.value)} placeholder="Tuliskan hasil akhir kesehatan secara menyeluruh..." />
                     </div>
                 </div>
             )}
         </div>
 
-        <div className="lg:col-span-4 space-y-6">
+        {/* KOLOM KANAN: PARAMETER OPERASIONAL */}
+        <div className="lg:col-span-4 space-y-6 no-print">
             <div className={cardClass}>
                 <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
                     <Zap size={14} className="text-amber-500"/> Parameter Operasional
@@ -292,11 +296,11 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
                 </h4>
                 <div className="space-y-4">
                     <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                        <p className="text-[9px] font-black text-slate-500 uppercase mb-1 flex items-center gap-2"><User size={10}/> Petugas Terakhir</p>
+                        <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Petugas Terakhir</p>
                         <p className="text-xs font-black text-white">{initialData?.lastModifiedBy || user?.name || 'Sistem'}</p>
                     </div>
                     <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                        <p className="text-[9px] font-black text-slate-500 uppercase mb-1 flex items-center gap-2"><Clock size={10}/> Update Terakhir</p>
+                        <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Update Terakhir</p>
                         <p className="text-xs font-black text-white">{initialData?.lastModifiedAt || new Date().toLocaleString()}</p>
                     </div>
                 </div>
@@ -304,6 +308,7 @@ const PatientForm: React.FC<Props> = ({ initialData, onSave, onCancel }) => {
         </div>
       </div>
 
+      {/* FLOATING ACTION BAR */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl bg-slate-950/90 backdrop-blur-xl p-5 rounded-[2.5rem] flex justify-between items-center z-50 shadow-2xl border border-white/10 no-print">
           <button type="button" onClick={onCancel} className="px-8 text-white/40 font-black uppercase text-[10px] tracking-widest hover:text-white transition">Batal</button>
           <button type="submit" className={`px-12 py-4 rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl transition-all active:scale-95 flex items-center gap-4 ${formData.isEmergency ? 'bg-rose-600 text-white hover:bg-rose-500' : 'bg-primary text-white hover:bg-primary-light'}`}>

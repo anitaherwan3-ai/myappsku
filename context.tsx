@@ -33,6 +33,15 @@ interface AppContextType extends AppState {
   login: (email: string, pass: string) => Promise<boolean>;
   logout: () => void;
   
+  // Resources metadata
+  patientsTotal: number;
+  activitiesTotal: number;
+  logsTotal: number;
+
+  refreshPatients: (page?: number, limit?: number) => Promise<void>;
+  refreshActivities: (page?: number, limit?: number) => Promise<void>;
+  refreshLogs: (page?: number, limit?: number) => Promise<void>;
+
   addActivity: (a: Activity) => Promise<void>;
   updateActivity: (a: Activity) => Promise<void>;
   deleteActivity: (id: string) => Promise<void>;
@@ -74,12 +83,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // States data dengan cache lokal awal
   const [activities, setActivities] = useState<Activity[]>(() => JSON.parse(localStorage.getItem('cache_activities') || JSON.stringify(MOCK_ACTIVITIES)));
+  const [activitiesTotal, setActivitiesTotal] = useState(MOCK_ACTIVITIES.length);
   const [officers, setOfficers] = useState<Officer[]>(() => JSON.parse(localStorage.getItem('cache_officers') || '[]'));
   const [news, setNews] = useState<News[]>(() => JSON.parse(localStorage.getItem('cache_news') || JSON.stringify(MOCK_NEWS)));
   const [patients, setPatients] = useState<Patient[]>(() => JSON.parse(localStorage.getItem('cache_patients') || JSON.stringify(MOCK_PATIENTS)));
+  const [patientsTotal, setPatientsTotal] = useState(MOCK_PATIENTS.length);
   const [icd10List, setIcd10List] = useState<ICD10[]>(() => JSON.parse(localStorage.getItem('cache_icd10') || '[]'));
   const [carouselItems, setCarouselItems] = useState<CarouselItem[]>(() => JSON.parse(localStorage.getItem('cache_carousel') || JSON.stringify(MOCK_CAROUSEL)));
   const [logs, setLogs] = useState<OfficerLog[]>(() => JSON.parse(localStorage.getItem('cache_logs') || '[]'));
+  const [logsTotal, setLogsTotal] = useState(0);
 
   const [syncQueue, setSyncQueue] = useState<any[]>(() => JSON.parse(localStorage.getItem('sync_queue') || '[]'));
 
@@ -99,6 +111,60 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(`cache_${key}`, JSON.stringify(data));
   };
 
+  const refreshPatients = useCallback(async (page?: number, limit?: number) => {
+    if (!navigator.onLine) return;
+    try {
+        const res = await axios.get('/patients', { params: { page, limit } });
+        if (res.data.data && Array.isArray(res.data.data)) {
+            setPatients(res.data.data);
+            setPatientsTotal(res.data.total);
+            updateLocalCache('patients', res.data.data);
+        } else {
+            setPatients(res.data);
+            setPatientsTotal(res.data.length);
+            updateLocalCache('patients', res.data);
+        }
+    } catch (e) {
+        console.warn("Error refreshing patients", e);
+    }
+  }, []);
+
+  const refreshActivities = useCallback(async (page?: number, limit?: number) => {
+    if (!navigator.onLine) return;
+    try {
+        const res = await axios.get('/activities', { params: { page, limit } });
+        if (res.data.data && Array.isArray(res.data.data)) {
+            setActivities(res.data.data);
+            setActivitiesTotal(res.data.total);
+            updateLocalCache('activities', res.data.data);
+        } else {
+            setActivities(res.data);
+            setActivitiesTotal(res.data.length);
+            updateLocalCache('activities', res.data);
+        }
+    } catch (e) {
+        console.warn("Error refreshing activities", e);
+    }
+  }, []);
+
+  const refreshLogs = useCallback(async (page?: number, limit?: number) => {
+    if (!navigator.onLine) return;
+    try {
+        const res = await axios.get('/logs', { params: { page, limit } });
+        if (res.data.data && Array.isArray(res.data.data)) {
+            setLogs(res.data.data);
+            setLogsTotal(res.data.total);
+            updateLocalCache('logs', res.data.data);
+        } else {
+            setLogs(res.data);
+            setLogsTotal(res.data.length);
+            updateLocalCache('logs', res.data);
+        }
+    } catch (e) {
+        console.warn("Error refreshing logs", e);
+    }
+  }, []);
+
   const fetchPublicData = useCallback(async () => {
     if (!navigator.onLine) { setIsLoading(false); return; }
     try {
@@ -107,7 +173,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         axios.get('/news').catch(() => ({ data: news })), 
         axios.get('/carousel').catch(() => ({ data: carouselItems }))
       ]);
-      setActivities(resAct.data); updateLocalCache('activities', resAct.data);
+      
+      const actData = Array.isArray(resAct.data) ? resAct.data : (resAct.data.data || []);
+      setActivities(actData); 
+      setActivitiesTotal(Array.isArray(resAct.data) ? resAct.data.length : (resAct.data.total || actData.length));
+      updateLocalCache('activities', actData);
+
       setNews(resNews.data); updateLocalCache('news', resNews.data);
       setCarouselItems(resCarousel.data); updateLocalCache('carousel', resCarousel.data);
     } catch (e) {
@@ -126,10 +197,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         axios.get('/icd10').catch(() => ({ data: icd10List })),
         axios.get('/logs').catch(() => ({ data: logs }))
       ]);
-      setPatients(resPat.data); updateLocalCache('patients', resPat.data);
+
+      const patData = Array.isArray(resPat.data) ? resPat.data : (resPat.data.data || []);
+      setPatients(patData);
+      setPatientsTotal(Array.isArray(resPat.data) ? resPat.data.length : (resPat.data.total || patData.length));
+      updateLocalCache('patients', patData);
+
       setOfficers(resOff.data); updateLocalCache('officers', resOff.data);
       setIcd10List(resIcd.data); updateLocalCache('icd10', resIcd.data);
-      setLogs(resLogs.data); updateLocalCache('logs', resLogs.data);
+
+      const logsData = Array.isArray(resLogs.data) ? resLogs.data : (resLogs.data.data || []);
+      setLogs(logsData);
+      setLogsTotal(Array.isArray(resLogs.data) ? resLogs.data.length : (resLogs.data.total || logsData.length));
+      updateLocalCache('logs', logsData);
     } catch (e) {
       console.warn("Using offline mock data.");
     }
@@ -138,7 +218,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     fetchPublicData();
     if (token) fetchProtectedData();
-  }, [fetchPublicData, fetchProtectedData, token]);
+  }, [token]);
 
   const processSyncQueue = async () => {
     const queue = JSON.parse(localStorage.getItem('sync_queue') || '[]');
@@ -152,6 +232,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
     localStorage.setItem('sync_queue', '[]');
     setSyncQueue([]);
+    fetchProtectedData();
   };
 
   const performAction = async (endpoint: string, method: 'post' | 'put' | 'delete', data: any) => {
@@ -163,25 +244,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (method === 'delete') setPatients(prev => prev.filter(p => p.id !== data.id));
         if (method === 'put') setPatients(prev => prev.map(p => p.id === data.id ? data : p));
     }
-    if (endpoint === 'activities') {
-        if (method === 'post') setActivities(prev => [data, ...prev]);
-        if (method === 'delete') setActivities(prev => prev.filter(p => p.id !== data.id));
-    }
 
     if (!navigator.onLine) {
         const newQueue = [...syncQueue, { endpoint, method, data, url }];
         setSyncQueue(newQueue);
         localStorage.setItem('sync_queue', JSON.stringify(newQueue));
-        alert("Offline: Data disimpan secara lokal.");
         return;
     }
 
     try {
         await axios[method](url, method === 'delete' ? undefined : data);
-        fetchProtectedData();
+        if (endpoint === 'patients') refreshPatients(1, 10);
+        if (endpoint === 'activities') refreshActivities(1, 10);
+        if (endpoint === 'logs') refreshLogs(1, 10);
     } catch(e) {
         console.warn("API Error, data cached locally only.");
-        updateLocalCache(endpoint, endpoint === 'patients' ? patients : activities);
     }
   };
 
@@ -223,6 +300,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AppContext.Provider value={{
       user, activities, officers, news, patients, icd10List, carouselItems, logs, isLoading, isOffline,
+      patientsTotal, activitiesTotal, logsTotal,
+      refreshPatients, refreshActivities, refreshLogs,
       login, logout,
       addActivity: (a) => performAction('activities', 'post', a),
       updateActivity: (a) => performAction('activities', 'put', a),

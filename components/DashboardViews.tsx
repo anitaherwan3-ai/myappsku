@@ -12,6 +12,7 @@ const tableHeadClass = "p-5 text-slate-400 font-black text-[10px] uppercase trac
 const tableCellClass = "p-5 text-sm text-slate-700 border-b border-slate-50 align-middle font-medium";
 const tableRowClass = "hover:bg-slate-50 transition duration-150";
 
+// MODAL RESUME MEDIS (FIXED PRINT)
 const PatientDetailModal = ({ patient, onClose }: { patient: Patient, onClose: () => void }) => {
     const { activities } = useApp();
     const event = activities.find(a => a.id === patient.activityId);
@@ -29,11 +30,12 @@ const PatientDetailModal = ({ patient, onClose }: { patient: Patient, onClose: (
     );
 
     return (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 no-print">
-            <div className="bg-white rounded-[3rem] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-card">
-                <div className="p-8 border-b flex justify-between items-center bg-slate-50/50">
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 print:static print:bg-white print:p-0">
+            <div className="bg-white rounded-[3rem] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-card print:static print:max-h-none print:max-w-none print:shadow-none print:rounded-none">
+                {/* MODAL HEADER */}
+                <div className="p-8 border-b flex justify-between items-center bg-slate-50/50 no-print">
                     <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white ${patient.isEmergency ? 'bg-rose-500' : 'bg-primary'}`}>
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white ${patient.isEmergency ? 'bg-rose-500 emergency-pulse' : 'bg-primary'}`}>
                             <User size={24}/>
                         </div>
                         <div>
@@ -47,13 +49,15 @@ const PatientDetailModal = ({ patient, onClose }: { patient: Patient, onClose: (
                     </div>
                 </div>
 
-                <div id="printable-resume" className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-white">
+                {/* PRINT AREA */}
+                <div id="printable-resume" className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-white print:p-0 print:overflow-visible">
                     <div className="text-center border-b-2 border-slate-900 pb-8 mb-8">
                         <h1 className="text-2xl font-black uppercase">RESUME MEDIS PASIEN</h1>
-                        <p className="font-bold text-slate-600 uppercase tracking-widest">PROVINCE COMMAND CENTER SUMATERA SELATAN</p>
+                        <p className="font-bold text-slate-600 uppercase tracking-widest">PROVINCE COMMAND CENTER (PCC) SUMATERA SELATAN</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        {/* LEFT COLUMN */}
                         <div className="space-y-8">
                             <section>
                                 <span className={sectionTitle}>Informasi Personal</span>
@@ -88,6 +92,7 @@ const PatientDetailModal = ({ patient, onClose }: { patient: Patient, onClose: (
                             </section>
                         </div>
 
+                        {/* RIGHT COLUMN */}
                         <div className="space-y-8">
                             {patient.category === 'Berobat' ? (
                                 <section>
@@ -95,31 +100,31 @@ const PatientDetailModal = ({ patient, onClose }: { patient: Patient, onClose: (
                                     <div className="space-y-4">
                                         <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
                                             <p className="text-[9px] font-black text-primary uppercase mb-1">Subjektif & Objektif</p>
-                                            <p className="text-[11px] font-bold text-slate-700 leading-relaxed italic">"{patient.subjective || 'Tidak ada anamnesa'}"</p>
-                                            <p className="text-[11px] font-bold text-slate-700 leading-relaxed mt-2">{patient.physicalExam}</p>
+                                            <p className="text-[11px] font-bold text-slate-700 italic">"{patient.subjective || 'Tidak ada anamnesa'}"</p>
+                                            <p className="text-[11px] font-bold text-slate-700 mt-2">{patient.physicalExam}</p>
                                         </div>
                                         <div className="p-4 bg-slate-900 rounded-2xl text-white">
                                             <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Diagnosis ICD-10</p>
-                                            <p className="text-xs font-black uppercase">[{patient.diagnosisCode}] {patient.diagnosisName}</p>
+                                            <p className="text-xs font-black uppercase">[{patient.diagnosisCode || 'NON-ICD'}] {patient.diagnosisName || '-'}</p>
                                         </div>
                                         <div className="p-4 bg-slate-50 rounded-2xl border">
                                             <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Plan / Terapi</p>
-                                            <p className="text-[11px] font-bold text-slate-700 leading-relaxed whitespace-pre-line">{patient.therapy}</p>
+                                            <p className="text-[11px] font-bold text-slate-700 whitespace-pre-line">{patient.therapy || '-'}</p>
                                         </div>
                                     </div>
                                 </section>
                             ) : (
                                 <section>
-                                    <span className={sectionTitle}>Pemeriksaan Fisik MCU</span>
+                                    <span className={sectionTitle}>Pemeriksaan MCU & Fisik</span>
                                     <div className="grid grid-cols-2 gap-x-8 gap-y-2">
                                         {dataRow("Visus R/L", `${patient.visusOD}/${patient.visusOS}`)}
                                         {dataRow("Buta Warna", patient.colorBlind)}
-                                        {dataRow("THT", patient.nose)}
+                                        {dataRow("Hidung", patient.nose)}
                                         {dataRow("Gigi/Mulut", patient.teeth)}
+                                        {dataRow("Tonsil", patient.tonsil)}
                                         {dataRow("Thorax", patient.thorax)}
                                         {dataRow("Abdomen", patient.abdomen)}
                                         {dataRow("Hernia", patient.hernia)}
-                                        {dataRow("Ekstremitas", patient.extremityDeformity)}
                                     </div>
                                     
                                     <span className={`${sectionTitle} mt-6`}>Pemeriksaan Penunjang</span>
@@ -133,7 +138,7 @@ const PatientDetailModal = ({ patient, onClose }: { patient: Patient, onClose: (
                                     </div>
 
                                     <div className="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
-                                        <p className="text-[9px] font-black text-indigo-500 uppercase mb-1">Kesimpulan MCU</p>
+                                        <p className="text-[9px] font-black text-indigo-500 uppercase mb-1">Kesimpulan Akhir MCU</p>
                                         <p className="text-xs font-black text-indigo-900 uppercase">{patient.mcuConclusion || 'BELUM ADA KESIMPULAN'}</p>
                                     </div>
                                 </section>
@@ -149,7 +154,8 @@ const PatientDetailModal = ({ patient, onClose }: { patient: Patient, onClose: (
                         </div>
                     </div>
 
-                    <div className="flex justify-between mt-20 px-4 print-only">
+                    {/* Tanda Tangan Cetak */}
+                    <div className="hidden print:flex justify-between mt-20 px-4">
                         <div className="text-center">
                             <p className="text-[10px] font-bold uppercase mb-16">Pasien / Keluarga,</p>
                             <p className="text-xs font-black border-t border-slate-900 pt-1">( ____________________ )</p>
@@ -242,7 +248,6 @@ export const ManagePatients = ({ mode }: { mode: 'edit' | 'add' | 'record' }) =>
                             <th className={tableHeadClass}>{mode === 'record' ? 'Hasil / Diagnosa' : 'Identitas (NIK)'}</th>
                             <th className={tableHeadClass}>Event & Kategori</th>
                             <th className={tableHeadClass}>Triage & Status</th>
-                            {/* Fix: Merged duplicate className into a single template literal */}
                             <th className={`${tableHeadClass} no-print`}>Aksi</th>
                         </tr>
                     </thead>
@@ -251,7 +256,7 @@ export const ManagePatients = ({ mode }: { mode: 'edit' | 'add' | 'record' }) =>
                             <tr key={p.id} className={`${tableRowClass} ${p.isEmergency ? 'bg-rose-50/50' : ''}`}>
                                 <td className={tableCellClass}>
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs text-white ${p.isEmergency ? 'bg-rose-600 animate-pulse' : 'bg-slate-900'}`}>{p.name.charAt(0)}</div>
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs text-white ${p.isEmergency ? 'bg-rose-600 emergency-pulse' : 'bg-slate-900'}`}>{p.name.charAt(0)}</div>
                                         <div><p className="font-black uppercase tracking-tight text-slate-800">{p.name}</p><p className="text-[10px] font-mono text-slate-400 font-bold">{p.mrn}</p></div>
                                     </div>
                                 </td>
@@ -275,7 +280,6 @@ export const ManagePatients = ({ mode }: { mode: 'edit' | 'add' | 'record' }) =>
                                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">RR: {p.respiration || '-'} bpm</p>
                                     </div>
                                 </td>
-                                {/* Fix: Merged duplicate className into a single template literal */}
                                 <td className={`${tableCellClass} no-print`}>
                                     <div className="flex gap-2">
                                         <button onClick={() => setViewingPatient(p)} className="p-3 text-slate-400 hover:text-primary transition-all bg-slate-100 rounded-xl" title="Lihat Detail & Cetak"><Eye size={16}/></button>
@@ -333,7 +337,6 @@ export const ManageActivities = () => {
                             <th className={tableHeadClass}>Host</th>
                             <th className={tableHeadClass}>Lokasi</th>
                             <th className={tableHeadClass}>Status</th>
-                            {/* Fix: Merged duplicate className into a single template literal */}
                             <th className={`${tableHeadClass} no-print`}>Aksi</th>
                         </tr>
                     </thead>
@@ -344,7 +347,6 @@ export const ManageActivities = () => {
                                 <td className={tableCellClass}>{a.host}</td>
                                 <td className={tableCellClass}>{a.location}</td>
                                 <td className={tableCellClass}><span className="px-2 py-1 bg-slate-100 rounded text-[9px] font-black uppercase">{a.status}</span></td>
-                                {/* Fix: Merged duplicate className into a single template literal */}
                                 <td className={`${tableCellClass} no-print`}>
                                     <button onClick={() => { if(window.confirm('Hapus kegiatan ini?')) deleteActivity(a.id) }} className="p-3 text-rose-500 bg-rose-50 rounded-xl hover:bg-rose-500 hover:text-white transition-all"><Trash2 size={16}/></button>
                                 </td>
@@ -370,7 +372,6 @@ export const ManageOfficers = () => {
                             <th className={tableHeadClass}>Email / Akun</th>
                             <th className={tableHeadClass}>Role</th>
                             <th className={tableHeadClass}>Team ID</th>
-                            {/* Fix: Merged duplicate className into a single template literal */}
                             <th className={`${tableHeadClass} no-print`}>Aksi</th>
                         </tr>
                     </thead>
@@ -381,7 +382,6 @@ export const ManageOfficers = () => {
                                 <td className={tableCellClass}>{o.email}</td>
                                 <td className={tableCellClass}><span className={`px-2 py-1 rounded text-[9px] font-black uppercase ${o.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-primary/10 text-primary'}`}>{o.role}</span></td>
                                 <td className={tableCellClass}><span className="font-mono">{o.teamId}</span></td>
-                                {/* Fix: Merged duplicate className into a single template literal */}
                                 <td className={`${tableCellClass} no-print`}>
                                     <button onClick={() => { if(window.confirm('Hapus petugas ini?')) deleteOfficer(o.id) }} className="p-3 text-rose-500 bg-rose-50 rounded-xl hover:bg-rose-500 hover:text-white transition-all"><Trash2 size={16}/></button>
                                 </td>
@@ -405,7 +405,6 @@ export const ManageNews = () => {
                         <tr>
                             <th className={tableHeadClass}>Judul Berita</th>
                             <th className={tableHeadClass}>Tanggal</th>
-                            {/* Fix: Merged duplicate className into a single template literal */}
                             <th className={`${tableHeadClass} no-print`}>Aksi</th>
                         </tr>
                     </thead>
@@ -414,7 +413,6 @@ export const ManageNews = () => {
                             <tr key={n.id} className={tableRowClass}>
                                 <td className={tableCellClass}><p className="font-black uppercase line-clamp-1">{n.title}</p></td>
                                 <td className={tableCellClass}>{n.date}</td>
-                                {/* Fix: Merged duplicate className into a single template literal */}
                                 <td className={`${tableCellClass} no-print`}>
                                     <button onClick={() => { if(window.confirm('Hapus berita ini?')) deleteNews(n.id) }} className="p-3 text-rose-500 bg-rose-50 rounded-xl hover:bg-rose-500 hover:text-white transition-all"><Trash2 size={16}/></button>
                                 </td>
@@ -438,7 +436,6 @@ export const ManageICD10 = () => {
                         <tr>
                             <th className={tableHeadClass}>Kode</th>
                             <th className={tableHeadClass}>Nama Diagnosa</th>
-                            {/* Fix: Merged duplicate className into a single template literal */}
                             <th className={`${tableHeadClass} no-print`}>Aksi</th>
                         </tr>
                     </thead>
@@ -447,7 +444,6 @@ export const ManageICD10 = () => {
                             <tr key={i.code} className={tableRowClass}>
                                 <td className={tableCellClass}><span className="font-black bg-slate-900 text-white px-2 py-0.5 rounded text-xs">{i.code}</span></td>
                                 <td className={tableCellClass}><p className="font-bold text-slate-600">{i.name}</p></td>
-                                {/* Fix: Merged duplicate className into a single template literal */}
                                 <td className={`${tableCellClass} no-print`}>
                                     <button onClick={() => { if(window.confirm('Hapus kode ini?')) deleteICD10(i.code) }} className="p-3 text-rose-500 bg-rose-50 rounded-xl hover:bg-rose-500 hover:text-white transition-all"><Trash2 size={16}/></button>
                                 </td>

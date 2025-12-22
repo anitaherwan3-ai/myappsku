@@ -1,18 +1,25 @@
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useApp } from '../context';
 import { OfficerLog } from '../types';
-import { Plus, Edit, Trash2, Printer, X, CalendarDays, MapPin, Clock, Camera, Image as ImageIcon, Search, Filter, User } from 'lucide-react';
+import { Plus, Edit, Trash2, Printer, X, CalendarDays, MapPin, Clock, Camera, Image as ImageIcon, Search, Filter, User, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 5;
 
 const DailyLog = () => {
-  const { logs, addLog, deleteLog, user } = useApp();
+  const { logs, logsTotal, addLog, deleteLog, user, refreshLogs } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Filter States
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  useEffect(() => {
+    refreshLogs(currentPage, ITEMS_PER_PAGE);
+  }, [currentPage, refreshLogs]);
 
   const filteredLogs = useMemo(() => {
       return logs.filter(log => {
@@ -63,6 +70,8 @@ const DailyLog = () => {
 
   const labelStyle = "text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 block";
   const inputStyle = "w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all font-bold";
+
+  const totalPages = Math.ceil(logsTotal / ITEMS_PER_PAGE);
 
   return (
     <div className="space-y-8 pb-20 animate-card">
@@ -188,6 +197,29 @@ const DailyLog = () => {
           )}
       </div>
 
+      {/* PAGINATION FOR LOGS */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 no-print">
+            <button 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+                className="p-4 rounded-2xl border border-slate-200 text-slate-400 hover:text-primary disabled:opacity-30 transition-all bg-white shadow-sm"
+            >
+                <ChevronLeft size={20} />
+            </button>
+            <div className="bg-white border px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-400 shadow-sm">
+                Page <span className="text-slate-800">{currentPage}</span> of <span className="text-slate-800">{totalPages}</span>
+            </div>
+            <button 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="p-4 rounded-2xl border border-slate-200 text-slate-400 hover:text-primary disabled:opacity-30 transition-all bg-white shadow-sm"
+            >
+                <ChevronRight size={20} />
+            </button>
+        </div>
+      )}
+
       {/* FOOTER INFO (ONLY PRINT) */}
       <div className="hidden print:flex justify-between mt-20 px-10">
           <div className="text-center">
@@ -196,7 +228,7 @@ const DailyLog = () => {
           </div>
           <div className="text-center">
               <p className="text-[10px] uppercase font-bold mb-16">Dilaporkan Oleh,</p>
-              <p className="text-xs font-black border-t border-slate-900 pt-1">Petugas Pelaksana</p>
+              <p className="text-xs font-black border-t border-slate-900 pt-1">{user?.name || 'Petugas Pelaksana'}</p>
           </div>
       </div>
     </div>

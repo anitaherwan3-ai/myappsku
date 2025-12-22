@@ -1,10 +1,26 @@
+
 const express = require('express');
 const router = express.Router();
 const { readDb, writeDb } = require('../db');
 
 router.get('/logs', (req, res) => {
     const db = readDb();
-    res.json(db.logs || []);
+    const items = db.logs || [];
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
+
+    if (page && limit) {
+        const startIndex = (page - 1) * limit;
+        const paginatedData = items.slice(startIndex, startIndex + limit);
+        return res.json({
+            data: paginatedData,
+            total: items.length,
+            page,
+            limit
+        });
+    }
+    
+    res.json(items);
 });
 
 router.post('/logs', (req, res) => {
